@@ -1,0 +1,17 @@
+{
+switch
+100
+100
+testSwitch
+output:
+output testSwitchOutput
+}
+{
+light
+300
+100
+testLight
+input:
+input testLightInput
+}
+con: testSwitchOutput testLightInput

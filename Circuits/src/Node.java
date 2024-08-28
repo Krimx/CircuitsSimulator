@@ -22,12 +22,20 @@ public class Node {
 			"and",
 			"or",
 			"not",
+			"xor",
+			"nand",
+			"nor",
+			"xnor",
 			"switch",
 			"light"};
 	public Color[] cols = {
 			new Color(53,205,159),
 			new Color(53,124,205),
 			new Color(220,129,196),
+			new Color(188,91,168),
+			new Color(161,232,218),
+			new Color(255,193,100),
+			new Color(205,249,130),
 			null,
 			null};
 	
@@ -43,8 +51,8 @@ public class Node {
 			this.inputs = new Input[2];
 			this.outputs = new Output[1];
 
-			this.inputs[0] = new Input("input 1", this.uuid);
-			this.inputs[1] = new Input("input 2", this.uuid);
+			this.inputs[0] = new Input("input", this.uuid);
+			this.inputs[1] = new Input("input", this.uuid);
 
 			this.outputs[0] = new Output("output", this.uuid);
 		}
@@ -52,8 +60,8 @@ public class Node {
 			this.inputs = new Input[2];
 			this.outputs = new Output[1];
 
-			this.inputs[0] = new Input("input 1", this.uuid);
-			this.inputs[1] = new Input("input 2", this.uuid);
+			this.inputs[0] = new Input("input", this.uuid);
+			this.inputs[1] = new Input("input", this.uuid);
 
 			this.outputs[0] = new Output("output", this.uuid);
 		}
@@ -61,7 +69,7 @@ public class Node {
 			this.inputs = new Input[1];
 			this.outputs = new Output[1];
 
-			this.inputs[0] = new Input("input 1", this.uuid);
+			this.inputs[0] = new Input("input", this.uuid);
 
 			this.outputs[0] = new Output("output", this.uuid);
 		}
@@ -76,6 +84,42 @@ public class Node {
 			this.outputs = new Output[0];
 
 			this.inputs[0] = new Input("input", this.uuid);
+		}
+		else if (this.id.equals("xor")) {
+			this.inputs = new Input[2];
+			this.outputs = new Output[1];
+
+			this.inputs[0] = new Input("input", this.uuid);
+			this.inputs[1] = new Input("input", this.uuid);
+			
+			this.outputs[0] = new Output("output", this.uuid);
+		}
+		else if (this.id.equals("nand")) {
+			this.inputs = new Input[2];
+			this.outputs = new Output[1];
+
+			this.inputs[0] = new Input("input", this.uuid);
+			this.inputs[1] = new Input("input", this.uuid);
+			
+			this.outputs[0] = new Output("output", this.uuid);
+		}
+		else if (this.id.equals("nor")) {
+			this.inputs = new Input[2];
+			this.outputs = new Output[1];
+
+			this.inputs[0] = new Input("input", this.uuid);
+			this.inputs[1] = new Input("input", this.uuid);
+			
+			this.outputs[0] = new Output("output", this.uuid);
+		}
+		else if (this.id.equals("xnor")) {
+			this.inputs = new Input[2];
+			this.outputs = new Output[1];
+
+			this.inputs[0] = new Input("input", this.uuid);
+			this.inputs[1] = new Input("input", this.uuid);
+			
+			this.outputs[0] = new Output("output", this.uuid);
 		}
 		else {
 			this.inputs = new Input[inputs.length];
@@ -97,6 +141,10 @@ public class Node {
 		else if (this.id.equals("not")) this.w = 45;
 		else if (this.id.equals("switch")) this.w = 75;
 		else if (this.id.equals("light")) this.w = 55;
+		else if (this.id.equals("xor")) this.w = 50;
+		else if (this.id.equals("nand")) this.w = 55;
+		else if (this.id.equals("nor")) this.w = 40;
+		else if (this.id.equals("xnor")) this.w = 55;
 		else this.w = 100;
 		
 		this.color = cols[indexOf(this.id, ids)];
@@ -469,9 +517,10 @@ public class Node {
 	}
 	
 	public void prepareForRemoval(ArrayList<Node> nodes) {
+		System.out.println(this.id);
 		for (int i = 0; i < this.inputs.length; i++) {
 			Output toCut = searchOutputsByUUID(nodes, this.inputs[i].connectedUUID);
-			toCut.severConnection(nodes, inputs[i].uuid);
+			if (toCut != null) toCut.severConnection(nodes, inputs[i].uuid);
 		}
 		
 		for (int i = 0; i < this.outputs.length; i++) {
@@ -485,6 +534,7 @@ public class Node {
 				break;
 			}
 		}
+		System.out.println(this.uuid);
 		
 		nodes.remove(toPop);
 	}
@@ -498,6 +548,18 @@ public class Node {
 		}
 		if (this.id.equals("not")) {
 			this.outputs[0].state = !this.inputs[0].state;
+		}
+		if (this.id.equals("xor")) {
+			this.outputs[0].state = (this.inputs[0].state || this.inputs[1].state) && !(this.inputs[0].state && this.inputs[1].state);
+		}
+		if (this.id.equals("nand")) {
+			this.outputs[0].state = !(this.inputs[0].state && this.inputs[1].state);
+		}
+		if (this.id.equals("nor")) {
+			this.outputs[0].state = !(this.inputs[0].state || this.inputs[1].state);
+		}
+		if (this.id.equals("xnor")) {
+			this.outputs[0].state = !((this.inputs[0].state || this.inputs[1].state) && !(this.inputs[0].state && this.inputs[1].state));
 		}
 		sendLogic(nodes);
 	}

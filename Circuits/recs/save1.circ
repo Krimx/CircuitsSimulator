@@ -12,6 +12,6 @@ light
 100
 testLight
 input:
-input testLightInput
+input testLightInput done
 }
 con: testSwitchOutput testLightInput

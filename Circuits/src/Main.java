@@ -1,16 +1,26 @@
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-//TODO: Add more gates (xor, nand, nor, etc)
-//TODO: Saving projects and whatnot (inside of the .jar file so do that stuff i think the engine already has the stuff for it and the lwjgl tutorial has a bit on it too)
-//TODO: Printwriter
+import javax.swing.JFileChooser;
+import javax.swing.JTextField;
+import javax.swing.SpringLayout;
+
+//TODO: controls guide
+//TODO: Fix mouse cross-platform
+//TODO: Multithreading on logic method to avoid freezing and crashing
+//Figure out bug where sometimes the window doesnt show when launching (i think its just an eclipse thing but yk always keep a lookout for exported jars)
+
+
 
 public class Main {
 	public static Engine engine = new Engine(false);
 	public static ArrayList<Node> nodes = new ArrayList<>();
+	public static ArrayList<Node> displayNodes = new ArrayList<>();
 	public static Font pointFont = new Font("Helvetica", Font.PLAIN, 16);
 	public static Font nodeFont = new Font("Helvetica", Font.PLAIN, 20);
 	
@@ -18,8 +28,24 @@ public class Main {
 	public static String grabbedUUID = "", grabbedNode = "";
 	
 	public static Line severLine = new Line(-1,-1,-1,-1);
-
+	
+	public static JTextField saveInputField = new JTextField();
+	public static SpringLayout layout = new SpringLayout();
+	
+	public static JFileChooser fileChooser = new JFileChooser();
+	public static String chosenFilePath = "";
+	public static String saveFilePath = "";
+	
 	public static void main(String[] args) {
+		//fileChooser.showSaveDialog(null);
+		//fileChooser.addChoosableFileFilter(null);
+		int dialog = fileChooser.showOpenDialog(null);
+		if (dialog == JFileChooser.APPROVE_OPTION)
+			 
+        {
+            // set the label to the path of the selected file
+            chosenFilePath = fileChooser.getSelectedFile().getAbsolutePath();
+        }
 		
 		loadSaveFile("save1.circ");
 
@@ -28,11 +54,8 @@ public class Main {
 		nodes.add(new Node(500, 150, "light", null, null, nodeFont));
 		nodes.get(0).outputs[0].createConnection(nodes.get(1).inputs[0].uuid, engine, nodes);
 		*/
-		
-		
-		
 		engine.initializeJFrame(800, 800, false, false, 60);
-		engine.mouse.setXOffset(-7);
+		engine.mouse.setXOffset(0); //-7 for windows, 0 for macos
 		engine.mouse.setYOffset(-30);
 		
 		try {
@@ -73,10 +96,14 @@ public class Main {
 
 	public static void mainLoop() {
 		if (engine.keys.K1TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "switch", null, null, nodeFont));
-		if (engine.keys.K2TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "and", null, null, nodeFont));
-		if (engine.keys.K3TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "or", null, null, nodeFont));
-		if (engine.keys.K4TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "not", null, null, nodeFont));
-		if (engine.keys.K5TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "light", null, null, nodeFont));
+		if (engine.keys.K2TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "light", null, null, nodeFont));
+		if (engine.keys.K3TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "and", null, null, nodeFont));
+		if (engine.keys.K4TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "or", null, null, nodeFont));
+		if (engine.keys.K5TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "not", null, null, nodeFont));
+		if (engine.keys.K6TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "xor", null, null, nodeFont));
+		if (engine.keys.K7TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "nand", null, null, nodeFont));
+		if (engine.keys.K8TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "nor", null, null, nodeFont));
+		if (engine.keys.K9TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "xnor", null, null, nodeFont));
 		
 		for (Node node : nodes) {
 			node.update(engine, nodes);
@@ -151,6 +178,17 @@ public class Main {
 			grabbedUUID = "";
 			grabbedNode = "";
 		}
+		
+		if (engine.keys.HTYPED()) {
+			int dialog = fileChooser.showSaveDialog(null);
+			if (dialog == JFileChooser.APPROVE_OPTION)
+				 
+	        {
+	            // set the label to the path of the selected file
+	            chosenFilePath = fileChooser.getSelectedFile().getAbsolutePath();
+	        }
+			saveToFile(chosenFilePath);
+		}
 	}
 	
 	public static int getIndexByUUID(String uuid) {
@@ -176,17 +214,27 @@ public class Main {
 	}
 	
 	public static void loadSaveFile(String saveFile) {
-		Scanner reader = engine.loadScannerFromSourceFolder("save1.circ");
+		//Please dont ask me how this works, its pretty much just a clusterfuck of code that i barely understand why it works
+		//If you decide to try and decode this yourself, good luck
+		Scanner reader = null;
+		try {
+			if (chosenFilePath.equals("")) reader = engine.loadScannerFromSourceFolder("save1.circ");
+			else reader = new Scanner(new File(chosenFilePath));
+		}
+		catch (Exception e) {}
 		boolean readingNode = false;
 		
 		String id = "", uuid = "";
 		int x = 0, y = 0;
 		ArrayList<Node.Input> inputs = new ArrayList<>();
 		ArrayList<Node.Output> outputs = new ArrayList<>();
+		boolean readingInputs = false, readingOutputs = false;
 		
 		while (reader.hasNextLine()) {
 			String readLine = reader.nextLine();
 			if (readLine.equals("{")) {
+				readingInputs = false;
+				readingOutputs = false;
 				id = reader.nextLine();
 				x = Integer.valueOf(reader.nextLine());
 				y = Integer.valueOf(reader.nextLine());
@@ -195,14 +243,24 @@ public class Main {
 				String inputOutputCheck = reader.nextLine();
 				
 				if (inputOutputCheck.equals("input:")) {
-					Scanner line = new Scanner(reader.nextLine());
-					String inID = line.next();
-					String inUUID = line.next();
-					
-					Node.Input toInput = new Node.Input(inID, uuid);
-					toInput.uuid = inUUID;
-					
-					inputs.add(toInput);
+					boolean readingInput = true;
+					while (readingInput) {
+						Scanner line = new Scanner(reader.nextLine());
+						String inID = line.next();
+						String inUUID = line.next();
+						
+						Node.Input toInput = new Node.Input(inID, uuid);
+						toInput.uuid = inUUID;
+						
+						inputs.add(toInput);
+						
+						if (line.hasNext()) {
+							String doneCheck = line.next();
+							if (doneCheck.equals("done")) {
+								readingInput = false;
+							}
+						}
+					}
 				}
 				
 				if (inputOutputCheck.equals("output:")) {
@@ -214,6 +272,19 @@ public class Main {
 					toOutput.uuid = inUUID;
 					
 					outputs.add(toOutput);
+				}
+				
+				inputOutputCheck = reader.nextLine();
+				if (inputOutputCheck.equals("output:")) {
+					Scanner line = new Scanner(reader.nextLine());
+					String inID = line.next();
+					String inUUID = line.next();
+					
+					Node.Output toOutput = new Node.Output(inID, uuid);
+					toOutput.uuid = inUUID;
+					
+					outputs.add(toOutput);
+					reader.nextLine();
 				}
 				
 				Node toMake = new Node(x,y,id,null,null, nodeFont);
@@ -238,8 +309,6 @@ public class Main {
 				inputs.clear();
 				outputs.clear();
 				nodes.add(toMake);
-				
-				reader.nextLine();
 			}
 			Scanner line = new Scanner(readLine);
 			if (line.next().equals("con:")) {
@@ -252,6 +321,66 @@ public class Main {
 	}
 	
 	public static void saveToFile(String filename) {
+		try {
+			File testFile = new File(filename);
+			String path = testFile.getAbsolutePath();
+			
+			FileOutputStream fout = new FileOutputStream(filename);
+			
+			String data = "";
+			
+			for (Node node : nodes) {
+				data += saveNode(node);
+			}
+			data += collectConnections();
+
+			data = data.substring(0, data.length() - 1);
+			
+			fout.write(data.getBytes());
+			
+			fout.flush();
+			fout.close();
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public static String saveNode(Node node) {
+		String toOut = "";
+		toOut += "{\n";
+		toOut += node.id + "\n";
+		toOut += node.x + "\n";
+		toOut += node.y + "\n";
+		toOut += node.uuid + "\n";
+		if (node.inputs.length > 0) toOut += "input:\n";
+		for (int i = 0; i < node.inputs.length; i++) {
+			String toAdd = node.inputs[i].id + " " + node.inputs[i].uuid;
+			if (i == node.inputs.length - 1) toAdd += " done";
+			toAdd += "\n";
+			toOut += toAdd;
+		}
+		if (node.outputs.length > 0) {
+			toOut += "output:\n";
+			String toAdd = node.outputs[0].id + " " + node.outputs[0].uuid + "\n";
+			toOut += toAdd;
+		}
+		toOut += "}\n";
+		return toOut;
+	}
+	
+	public static String collectConnections() {
+		String toOut = "";
 		
+		for (Node node : nodes) {
+			for (Node.Output output : node.outputs) {
+				for (String uuid : output.connectedUUIDs) {
+					toOut += "con: " + output.uuid + " " + uuid + "\n";
+				}
+			}
+		}
+		
+		return toOut;
 	}
 }

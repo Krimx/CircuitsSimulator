@@ -237,7 +237,7 @@ public class Node {
 			catch(Exception e) {}
 		}
 		
-		public void createConnection(String toUUID, Engine engine, ArrayList<Node> nodes) {
+		public void createConnection(String toUUID, Engine engine, ArrayList<Node> nodes, ArrayList<String> ranUUIDs) {
 			Node parent = searchNodesByUUID(nodes, this.parentUUID);
 			
 			int toY = parent.y + (parent.yOffset + (parent.yOffset / 2)) + (searchOutputIndexByUUID(parent, this.uuid) * parent.yGap) - (parent.h / 2) - engine.camera.getY();
@@ -269,7 +269,10 @@ public class Node {
 			}
 			catch(Exception e) {}
 			
-			parent.logic(nodes, false);
+			if (!ranUUIDs.contains(parent.uuid)) {
+				ranUUIDs.add(parent.uuid);
+				parent.logic(nodes, ranUUIDs);
+			}
 		}
 		
 		public void severConnection(ArrayList<Node> nodes, String uuid) {
@@ -352,7 +355,7 @@ public class Node {
 		return index;
 	}
 	
-	public void recreateConnections(ArrayList<Node> nodes, Engine engine) {
+	public void recreateConnections(ArrayList<Node> nodes, Engine engine, ArrayList<String> ranUUIDs) {
 		for (int i = 0; i < nodes.size(); i++) {
 			for (int j = 0; j < nodes.get(i).outputs.length; j++) {
 				if (nodes.get(i).outputs[j].connectedUUIDs.size() > 0) {
@@ -360,7 +363,7 @@ public class Node {
 					nodes.get(i).outputs[j].connectedUUIDs.clear();
 					nodes.get(i).outputs[j].connections.clear();
 					for (int k = 0; k < uuids.size(); k++) {
-						nodes.get(i).outputs[j].createConnection(uuids.get(k), engine, nodes);
+						nodes.get(i).outputs[j].createConnection(uuids.get(k), engine, nodes, ranUUIDs);
 					}
 					
 				}
@@ -494,27 +497,6 @@ public class Node {
 					g.drawLine(con.x1, con.y1, con.x2, con.y2);
 				}
 			}
-			/*
-			//Iterate through every input in every node and find a matching connected uuid
-			try {
-				for (int j = 0; j < nodes.size(); j++) { //Iterate over nodes
-					for (int k = 0; k < nodes.get(j).inputs.length; k++) { //Iterate over inputs in nodes
-						if (nodes.get(j).inputs[k].uuid.equals(this.outputs[i].connectedUUID)) { //Check for matching uuid and connectedUUID
-							g.setColor(Color.red);
-							int endX = nodes.get(j).x - (nodes.get(j).w / 2) - camera.getX();
-							int endY = nodes.get(j).y + (nodes.get(j).yOffset + (nodes.get(j).yOffset / 2)) + (j * nodes.get(j).yGap) - (nodes.get(j).h / 2) - camera.getY();
-							g.drawLine(toX, toY, endX, endY);
-							
-							//Get out of the loops and move on with life
-							break;
-						}
-					}
-				}
-			}
-			catch(Exception e) {}
-			*/
-			
-			
 			
 			boolean mouseHover = inRad(toX, toY, rad, engine.mouse.getX(), engine.mouse.getY());
 			
@@ -539,11 +521,11 @@ public class Node {
 		}
 	}
 	
-	public void update(Engine engine, ArrayList<Node> nodes) {
+	public void update(Engine engine, ArrayList<Node> nodes, ArrayList<String> ranUUIDs) {
 		if (this.id.equals("switch")) {
 			if (mouseIsHovering(engine) && engine.keys.SPACETYPED()) {
 				this.outputs[0].state = !this.outputs[0].state;
-				logic(nodes, false);
+				logic(nodes, ranUUIDs);
 			}
 		}
 		
@@ -599,9 +581,8 @@ public class Node {
 		nodes.remove(toPop);
 	}
 
-	public void logic(ArrayList<Node> nodes, boolean stackOverflow) {
-		boolean overflow = false;
-		try {
+	public void logic(ArrayList<Node> nodes, ArrayList<String> ranUUIDs) {
+		if (!ranUUIDs.contains(this.uuid)) {
 			if (this.id.equals("and")) {
 				this.outputs[0].state = (this.inputs[0].state && this.inputs[1].state);
 			}
@@ -623,20 +604,17 @@ public class Node {
 			if (this.id.equals("xnor")) {
 				this.outputs[0].state = !((this.inputs[0].state || this.inputs[1].state) && !(this.inputs[0].state && this.inputs[1].state));
 			}
+			
+			sendLogic(nodes, ranUUIDs);
 		}
-		catch (Exception e) {
-			sendLogic(nodes, true);
-			overflow = true;
-		}
-		
-		if (!overflow) sendLogic(nodes, false);
 	}
 	
-	public void sendLogic(ArrayList<Node> nodes, boolean stackOverflow) {
-		if (this.outputs.length > 0 && !stackOverflow) {
+	public void sendLogic(ArrayList<Node> nodes, ArrayList<String> ranUUIDs) {
+		if (this.outputs.length > 0 && !ranUUIDs.contains(this.uuid)) {
 			for (int i = 0; i < this.outputs[0].connectedUUIDs.size(); i++) {
 				if (this.outputs.length > 0) searchInputsByUUID(nodes, this.outputs[0].connectedUUIDs.get(i)).state = this.outputs[0].state;
-				searchNodesByUUID(nodes, searchInputsByUUID(nodes, this.outputs[0].connectedUUIDs.get(i)).parentUUID).logic(nodes, false);
+				ranUUIDs.add(this.uuid);
+				searchNodesByUUID(nodes, searchInputsByUUID(nodes, this.outputs[0].connectedUUIDs.get(i)).parentUUID).logic(nodes, ranUUIDs);
 			}
 		}
 		

@@ -13,7 +13,8 @@ import javax.swing.JPanel;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 //TODO: Find solution to crashing when connection a node to a node that connects back to it
-//Figure out bug where sometimes the window doesnt show when launching (i think its just an eclipse thing but yk always keep a lookout for exported jars)
+	//I did a fix but im not sure if it gives desirable behavior. it involves telling the circuit what nodes were ran and not letting them run again for the tick
+//TODO: Custom nodes by grouping nodes and clicking a button or something to create a custom node. Save the node in the project file (idk figure it out)
 
 class ControlsPanel extends JPanel {
 	public void paintComponent(Graphics g) {
@@ -102,6 +103,8 @@ public class Main {
 	public static Node exampleNor = new Node(100,660 + yOffset,"nor", null, null, nodeFont);
 	public static Node exampleXnor = new Node(100,740 + yOffset,"xnor", null, null, nodeFont);
 	
+	public static ArrayList<String> ranUUIDs = new ArrayList<>();
+	
 	public static void main(String[] args) {
 		fileChooser.setDialogTitle("Choose Circuit File (Close for default)");
 		fileChooser.setFileFilter(new FileNameExtensionFilter("Circuit Files", "circ"));
@@ -182,8 +185,10 @@ public class Main {
 		if (engine.keys.K9TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "xnor", null, null, nodeFont));
 		
 		for (Node node : nodes) {
-			node.update(engine, nodes);
+			node.update(engine, nodes, ranUUIDs);
+			System.out.println(ranUUIDs);
 		}
+		ranUUIDs.clear();
 		
 		if (engine.mouse.RIGHT()) {
 			if (!startedRightClick) {
@@ -245,7 +250,7 @@ public class Main {
 					for (Node.Input input : node.inputs) {
 						if (node.inRad(input.trueX, input.trueY, node.pointRad, engine.mouse.getX(), engine.mouse.getY())) {
 							if (!input.uuid.equals(grabbedUUID) && !grabbedUUID.equals("")) {
-								searchByUUID(grabbedUUID).createConnection(input.uuid, engine, nodes);
+								searchByUUID(grabbedUUID).createConnection(input.uuid, engine, nodes, ranUUIDs);
 							}
 						}
 					}
@@ -265,6 +270,7 @@ public class Main {
 	        }
 			saveToFile(chosenFilePath);
 		}
+
 	}
 	
 	public static int getIndexByUUID(String uuid) {
@@ -391,15 +397,15 @@ public class Main {
 				String outputUUID = line.next();
 				String inputUUID = line.next();
 				Node.Output find = searchByUUID(outputUUID);
-				find.createConnection(inputUUID, engine, nodes);
+				find.createConnection(inputUUID, engine, nodes, ranUUIDs);
 			}
 		}
 	}
 	
 	public static void saveToFile(String filename) {
 		try {
-			File testFile = new File(filename);
-			String path = testFile.getAbsolutePath();
+			System.out.println(filename.substring(filename.length() - 5, filename.length()));
+			if (!filename.substring(filename.length() - 5, filename.length()).equals(".circ")) filename += ".circ";
 			
 			FileOutputStream fout = new FileOutputStream(filename);
 			

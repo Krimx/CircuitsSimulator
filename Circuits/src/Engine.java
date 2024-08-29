@@ -145,9 +145,9 @@ public class Engine {
 	public void initializeJFrame(int screen_width, int screen_height, boolean fullscreen, boolean undecorated, int ticks_per_second) {
 		cont.add(scr);
 		frame.addKeyListener(keys);
-		frame.addMouseListener(mouse);
-		frame.addMouseMotionListener(mouse);
-		frame.addMouseWheelListener(mouse);
+		scr.addMouseListener(mouse);
+		scr.addMouseMotionListener(mouse);
+		scr.addMouseWheelListener(mouse);
 
 		
 		scrWidth = screen_width;
@@ -976,7 +976,6 @@ public class Engine {
 		private int x,y, lastX = 0, lastY = 0;
 		private int scroll, scrollDifference = 0;
 		private int dX = 0, dY = 0;
-		private boolean undeco;
 		private Robot bot;
 		private int xOffset = 0, yOffset = 0;
 		

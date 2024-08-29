@@ -142,8 +142,8 @@ public class Node {
 		else if (this.id.equals("switch")) this.w = 75;
 		else if (this.id.equals("light")) this.w = 55;
 		else if (this.id.equals("xor")) this.w = 50;
-		else if (this.id.equals("nand")) this.w = 55;
-		else if (this.id.equals("nor")) this.w = 40;
+		else if (this.id.equals("nand")) this.w = 65;
+		else if (this.id.equals("nor")) this.w = 50;
 		else if (this.id.equals("xnor")) this.w = 55;
 		else this.w = 100;
 		
@@ -269,7 +269,7 @@ public class Node {
 			}
 			catch(Exception e) {}
 			
-			parent.logic(nodes);
+			parent.logic(nodes, false);
 		}
 		
 		public void severConnection(ArrayList<Node> nodes, String uuid) {
@@ -293,6 +293,16 @@ public class Node {
 			this.connectedUUIDs.clear();
 			this.connections.clear();
 		}
+	}
+	
+	public String[] getInputUUIDs() {
+		String[] toOut = new String[this.inputs.length];
+		
+		for (int i = 0; i < this.inputs.length; i++) {
+			toOut[i] = this.inputs[i].uuid;
+		}
+		
+		return toOut;
 	}
 	
 	public Output searchOutputsByUUID(ArrayList<Node> nodes, String toCheck) {
@@ -363,6 +373,56 @@ public class Node {
 			for (int j = 0; j < nodes.get(i).outputs.length; j++) {
 				nodes.get(i).outputs[j].redrawConnectionLines(nodes, engine);
 			}
+		}
+	}
+	
+	public void render(Graphics g, Font pointFont, Font nodeFont) {
+		g.setColor(this.color);
+		if (this.id.equals("switch")) {
+			if (this.outputs[0].state) g.setColor(new Color(49,250,52));
+			else g.setColor(new Color(6,63,16));
+		}
+		if (this.id.equals("light")) {
+			if (this.inputs[0].state) g.setColor(new Color(45,225,245));
+			else g.setColor(new Color(16,34,68));
+		}
+		g.fillRect(x - (this.w / 2), y - (this.h / 2), w, h);
+		g.setColor(Color.black);
+		g.drawRect(x - (this.w / 2), y - (this.h / 2), w, h);
+		
+		g.setColor(Color.black);
+		g.setFont(nodeFont);
+		g.drawString(this.id, this.x - (this.w / 2) + 10, this.y + 8);
+		
+		for (int i = 0; i < this.inputs.length; i++) {
+			//Gathering render positions
+			int rad = this.pointRad;
+			int toY = this.y + (this.yOffset + (this.yOffset / 2)) + (i * this.yGap) - (this.h / 2);
+			int toX = this.x - (this.w / 2);
+			this.inputs[i].trueX = toX;
+			this.inputs[i].trueY = toY;
+			
+			g.setColor(new Color(243, 240, 226));
+			
+			g.fillOval(toX - rad, toY - rad, rad * 2, rad * 2);
+			
+			g.setColor(Color.black);
+			g.drawOval(toX - rad, toY - rad, rad * 2, rad * 2);
+		}
+		
+		for (int i = 0; i < this.outputs.length; i++) {
+			int rad = this.pointRad;
+			int toY = this.y + (this.yOffset + (this.yOffset / 2)) + (i * this.yGap) - (this.h / 2);
+			int toX = this.x + (this.w / 2);
+			this.outputs[i].trueX = toX;
+			this.outputs[i].trueY = toY;
+			
+			g.setColor(new Color(243, 240, 226));
+			
+			g.fillOval(toX - rad, toY - rad, rad * 2, rad * 2);
+			
+			g.setColor(Color.black);
+			g.drawOval(toX - rad, toY - rad, rad * 2, rad * 2);
 		}
 	}
 	
@@ -483,7 +543,7 @@ public class Node {
 		if (this.id.equals("switch")) {
 			if (mouseIsHovering(engine) && engine.keys.SPACETYPED()) {
 				this.outputs[0].state = !this.outputs[0].state;
-				logic(nodes);
+				logic(nodes, false);
 			}
 		}
 		
@@ -539,36 +599,44 @@ public class Node {
 		nodes.remove(toPop);
 	}
 
-	public void logic(ArrayList<Node> nodes) {
-		if (this.id.equals("and")) {
-			this.outputs[0].state = (this.inputs[0].state && this.inputs[1].state);
+	public void logic(ArrayList<Node> nodes, boolean stackOverflow) {
+		boolean overflow = false;
+		try {
+			if (this.id.equals("and")) {
+				this.outputs[0].state = (this.inputs[0].state && this.inputs[1].state);
+			}
+			if (this.id.equals("or")) {
+				this.outputs[0].state = (this.inputs[0].state || this.inputs[1].state);
+			}
+			if (this.id.equals("not")) {
+				this.outputs[0].state = !this.inputs[0].state;
+			}
+			if (this.id.equals("xor")) {
+				this.outputs[0].state = (this.inputs[0].state || this.inputs[1].state) && !(this.inputs[0].state && this.inputs[1].state);
+			}
+			if (this.id.equals("nand")) {
+				this.outputs[0].state = !(this.inputs[0].state && this.inputs[1].state);
+			}
+			if (this.id.equals("nor")) {
+				this.outputs[0].state = !(this.inputs[0].state || this.inputs[1].state);
+			}
+			if (this.id.equals("xnor")) {
+				this.outputs[0].state = !((this.inputs[0].state || this.inputs[1].state) && !(this.inputs[0].state && this.inputs[1].state));
+			}
 		}
-		if (this.id.equals("or")) {
-			this.outputs[0].state = (this.inputs[0].state || this.inputs[1].state);
+		catch (Exception e) {
+			sendLogic(nodes, true);
+			overflow = true;
 		}
-		if (this.id.equals("not")) {
-			this.outputs[0].state = !this.inputs[0].state;
-		}
-		if (this.id.equals("xor")) {
-			this.outputs[0].state = (this.inputs[0].state || this.inputs[1].state) && !(this.inputs[0].state && this.inputs[1].state);
-		}
-		if (this.id.equals("nand")) {
-			this.outputs[0].state = !(this.inputs[0].state && this.inputs[1].state);
-		}
-		if (this.id.equals("nor")) {
-			this.outputs[0].state = !(this.inputs[0].state || this.inputs[1].state);
-		}
-		if (this.id.equals("xnor")) {
-			this.outputs[0].state = !((this.inputs[0].state || this.inputs[1].state) && !(this.inputs[0].state && this.inputs[1].state));
-		}
-		sendLogic(nodes);
+		
+		if (!overflow) sendLogic(nodes, false);
 	}
 	
-	public void sendLogic(ArrayList<Node> nodes) {
-		if (this.outputs.length > 0) {
+	public void sendLogic(ArrayList<Node> nodes, boolean stackOverflow) {
+		if (this.outputs.length > 0 && !stackOverflow) {
 			for (int i = 0; i < this.outputs[0].connectedUUIDs.size(); i++) {
 				if (this.outputs.length > 0) searchInputsByUUID(nodes, this.outputs[0].connectedUUIDs.get(i)).state = this.outputs[0].state;
-				searchNodesByUUID(nodes, searchInputsByUUID(nodes, this.outputs[0].connectedUUIDs.get(i)).parentUUID).logic(nodes);
+				searchNodesByUUID(nodes, searchInputsByUUID(nodes, this.outputs[0].connectedUUIDs.get(i)).parentUUID).logic(nodes, false);
 			}
 		}
 		

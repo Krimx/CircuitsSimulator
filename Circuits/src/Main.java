@@ -2,20 +2,74 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Scanner;
 
 import javax.swing.JFileChooser;
-import javax.swing.JTextField;
-import javax.swing.SpringLayout;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
-//TODO: controls guide
-//TODO: Fix mouse cross-platform
-//TODO: Multithreading on logic method to avoid freezing and crashing
+//TODO: Find solution to crashing when connection a node to a node that connects back to it
 //Figure out bug where sometimes the window doesnt show when launching (i think its just an eclipse thing but yk always keep a lookout for exported jars)
 
+class ControlsPanel extends JPanel {
+	public void paintComponent(Graphics g) {
+		g.setColor(new Color(55, 55, 65));
+		g.fillRect(0, 0, 1000, 1000);
+		
+		g.setFont(Main.nodeFont);
+		g.setColor(Color.black);
+		g.drawString("[1]: ", Main.exampleSwitch.x - 75, Main.exampleSwitch.y + 6);
+		g.drawString("[2]: ", Main.exampleSwitch.x - 75, Main.exampleLight.y + 6);
+		g.drawString("[3]: ", Main.exampleSwitch.x - 75, Main.exampleAnd.y + 6);
+		g.drawString("[4]: ", Main.exampleSwitch.x - 75, Main.exampleOr.y + 6);
+		g.drawString("[5]: ", Main.exampleSwitch.x - 75, Main.exampleNot.y + 6);
+		g.drawString("[6]: ", Main.exampleSwitch.x - 75, Main.exampleXor.y + 6);
+		g.drawString("[7]: ", Main.exampleSwitch.x - 75, Main.exampleNand.y + 6);
+		g.drawString("[8]: ", Main.exampleSwitch.x - 75, Main.exampleNor.y + 6);
+		g.drawString("[9]: ", Main.exampleSwitch.x - 75, Main.exampleXnor.y + 6);
 
+		Main.exampleSwitch.render(g, Main.pointFont, Main.nodeFont);
+		Main.exampleLight.render(g, Main.pointFont, Main.nodeFont);
+		Main.exampleAnd.render(g, Main.pointFont, Main.nodeFont);
+		Main.exampleOr.render(g, Main.pointFont, Main.nodeFont);
+		Main.exampleNot.render(g, Main.pointFont, Main.nodeFont);
+		Main.exampleXor.render(g, Main.pointFont, Main.nodeFont);
+		Main.exampleNand.render(g, Main.pointFont, Main.nodeFont);
+		Main.exampleNor.render(g, Main.pointFont, Main.nodeFont);
+		Main.exampleXnor.render(g, Main.pointFont, Main.nodeFont);
+		
+		g.setFont(Main.nodeFont);
+		g.setColor(Color.black);
+		g.drawString("Shift + Left Click: Delete Node", Main.exampleSwitch.x + 75, Main.exampleSwitch.y + 6);
+		g.drawString("Right Click + Drag: Sever Link", Main.exampleLight.x + 75, Main.exampleLight.y + 6);
+		g.drawString("Middle Mouse + Drag: Look Around", Main.exampleAnd.x + 75, Main.exampleAnd.y + 6);
+	}
+}
+
+class FileTypeFilter implements FileFilter {
+    private String extension;
+    private String description;
+ 
+    public FileTypeFilter(String extension, String description) {
+        this.extension = extension;
+        this.description = description;
+    }
+ 
+    public boolean accept(File file) {
+        if (file.isDirectory()) {
+            return true;
+        }
+        return file.getName().endsWith(extension);
+    }
+ 
+    public String getDescription() {
+        return description + String.format(" (*%s)", extension);
+    }
+}
 
 public class Main {
 	public static Engine engine = new Engine(false);
@@ -29,14 +83,28 @@ public class Main {
 	
 	public static Line severLine = new Line(-1,-1,-1,-1);
 	
-	public static JTextField saveInputField = new JTextField();
-	public static SpringLayout layout = new SpringLayout();
-	
 	public static JFileChooser fileChooser = new JFileChooser();
 	public static String chosenFilePath = "";
 	public static String saveFilePath = "";
 	
+	public static JFrame controlsFrame = new JFrame();
+	public static ControlsPanel controlsPanel = new ControlsPanel();
+	
+	public static int yOffset = -40;
+
+	public static Node exampleSwitch = new Node(100,100 + yOffset,"switch", null, null, nodeFont);
+	public static Node exampleLight = new Node(100,180 + yOffset,"light", null, null, nodeFont);
+	public static Node exampleAnd = new Node(100,260 + yOffset,"and", null, null, nodeFont);
+	public static Node exampleOr = new Node(100,340 + yOffset,"or", null, null, nodeFont);
+	public static Node exampleNot = new Node(100,420 + yOffset,"not", null, null, nodeFont);
+	public static Node exampleXor = new Node(100,500 + yOffset,"xor", null, null, nodeFont);
+	public static Node exampleNand = new Node(100,580 + yOffset,"nand", null, null, nodeFont);
+	public static Node exampleNor = new Node(100,660 + yOffset,"nor", null, null, nodeFont);
+	public static Node exampleXnor = new Node(100,740 + yOffset,"xnor", null, null, nodeFont);
+	
 	public static void main(String[] args) {
+		fileChooser.setDialogTitle("Choose Circuit File (Close for default)");
+		fileChooser.setFileFilter(new FileNameExtensionFilter("Circuit Files", "circ"));
 		//fileChooser.showSaveDialog(null);
 		//fileChooser.addChoosableFileFilter(null);
 		int dialog = fileChooser.showOpenDialog(null);
@@ -55,18 +123,21 @@ public class Main {
 		nodes.get(0).outputs[0].createConnection(nodes.get(1).inputs[0].uuid, engine, nodes);
 		*/
 		engine.initializeJFrame(800, 800, false, false, 60);
-		engine.mouse.setXOffset(0); //-7 for windows, 0 for macos
-		engine.mouse.setYOffset(-30);
+		
+		controlsFrame.setSize(500,800);
+		controlsFrame.setLocationRelativeTo(engine.frame);
+		controlsFrame.setLocation(engine.frame.getLocation().x + engine.scrWidth, engine.frame.getLocation().x);
+		controlsFrame.getContentPane().add(controlsPanel);
+		controlsFrame.setVisible(true);
+		engine.frame.setVisible(true);
 		
 		try {
 			engine.run();
 		}
 		catch(Exception e) {}
 	}
-
-	public static void paintToFrame(Graphics g) {
-		engine.setBackground(g, new Color(65, 65, 75));
-		
+	
+	public static void paintNodes(Graphics g) {
 		for (int i = 0; i < nodes.size(); i++) {
 			nodes.get(i).render(g, engine, pointFont, nodeFont, engine.camera, nodes, grabbedUUID);
 		}
@@ -92,6 +163,11 @@ public class Main {
 			Node.Output output = searchByUUID(grabbedUUID);
 			g.drawLine(output.trueX, output.trueY, engine.mouse.getX(), engine.mouse.getY());
 		}
+	}
+
+	public static void paintToFrame(Graphics g) {
+		engine.setBackground(g, new Color(65, 65, 75));
+		paintNodes(g);
 	}
 
 	public static void mainLoop() {

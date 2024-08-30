@@ -183,10 +183,10 @@ public class Main {
 		if (engine.keys.K7TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "nand", null, null, nodeFont));
 		if (engine.keys.K8TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "nor", null, null, nodeFont));
 		if (engine.keys.K9TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "xnor", null, null, nodeFont));
+		if (engine.keys.K0TYPED()) nodes.add(new CustomNode(engine.mouse.getX(), engine.mouse.getY(), "custom", null, null, nodeFont, null));
 		
 		for (Node node : nodes) {
 			node.update(engine, nodes, ranUUIDs);
-			System.out.println(ranUUIDs);
 		}
 		ranUUIDs.clear();
 		
@@ -261,6 +261,8 @@ public class Main {
 		}
 		
 		if (engine.keys.HTYPED()) {
+			fileChooser.setDialogTitle("Save Project File");
+			fileChooser.setFileFilter(new FileNameExtensionFilter("Circuit File", "circ"));
 			int dialog = fileChooser.showSaveDialog(null);
 			if (dialog == JFileChooser.APPROVE_OPTION)
 				 
@@ -271,6 +273,34 @@ public class Main {
 			saveToFile(chosenFilePath);
 		}
 
+		if (engine.keys.NTYPED()) {
+			fileChooser.setDialogTitle("Create Node File");
+			fileChooser.setFileFilter(new FileNameExtensionFilter("Node File", "node"));
+			int dialog = fileChooser.showSaveDialog(null);
+			if (dialog == JFileChooser.APPROVE_OPTION)
+				 
+	        {
+	            // set the label to the path of the selected file
+	            chosenFilePath = fileChooser.getSelectedFile().getAbsolutePath();
+	        }
+			createCustomNode("customNode");
+		}
+		
+		if (engine.keys.CTYPED()) {
+			fileChooser.setDialogTitle("Choose Node File");
+			fileChooser.setFileFilter(new FileNameExtensionFilter("Node File", "node"));
+			//fileChooser.showSaveDialog(null);
+			//fileChooser.addChoosableFileFilter(null);
+			int dialog = fileChooser.showOpenDialog(null);
+			if (dialog == JFileChooser.APPROVE_OPTION)
+				 
+	        {
+	            // set the label to the path of the selected file
+	            chosenFilePath = fileChooser.getSelectedFile().getAbsolutePath();
+	        }
+			
+			loadCustomNode("customNode");
+		}
 	}
 	
 	public static int getIndexByUUID(String uuid) {
@@ -464,5 +494,142 @@ public class Main {
 		}
 		
 		return toOut;
+	}
+
+	public static void createCustomNode(String filename) {
+		try {
+			System.out.println(filename.substring(filename.length() - 5, filename.length()));
+			if (!filename.substring(filename.length() - 5, filename.length()).equals(".node")) filename += ".node";
+			
+			FileOutputStream fout = new FileOutputStream(filename);
+			
+			String data = "";
+			
+			for (Node node : nodes) {
+				data += saveNode(node);
+			}
+			data += collectConnections();
+
+			data = data.substring(0, data.length() - 1);
+			
+			fout.write(data.getBytes());
+			
+			fout.flush();
+			fout.close();
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public static void loadCustomNode(String filename) {
+		//CustomNode node = new CustomNode();
+		//Fuck fuck shit fuck ass cock fuck shit aaaaaaaaaaaaaa(help idk what im doing at this point and i hate it all)
+		
+		//Please dont ask me how this works, its pretty much just a clusterfuck of code that i barely understand why it works
+				//If you decide to try and decode this yourself, good luck
+				Scanner reader = null;
+				try {
+					if (chosenFilePath.equals("")) reader = engine.loadScannerFromSourceFolder("save1.circ");
+					else reader = new Scanner(new File(chosenFilePath));
+				}
+				catch (Exception e) {}
+				boolean readingNode = false;
+				
+				String id = "", uuid = "";
+				int x = 0, y = 0;
+				ArrayList<Node.Input> inputs = new ArrayList<>();
+				ArrayList<Node.Output> outputs = new ArrayList<>();
+				boolean readingInputs = false, readingOutputs = false;
+				
+				while (reader.hasNextLine()) {
+					String readLine = reader.nextLine();
+					if (readLine.equals("{")) {
+						readingInputs = false;
+						readingOutputs = false;
+						id = reader.nextLine();
+						x = Integer.valueOf(reader.nextLine());
+						y = Integer.valueOf(reader.nextLine());
+						uuid = reader.nextLine();
+						
+						String inputOutputCheck = reader.nextLine();
+						
+						if (inputOutputCheck.equals("input:")) {
+							boolean readingInput = true;
+							while (readingInput) {
+								Scanner line = new Scanner(reader.nextLine());
+								String inID = line.next();
+								String inUUID = line.next();
+								
+								Node.Input toInput = new Node.Input(inID, uuid);
+								toInput.uuid = inUUID;
+								
+								inputs.add(toInput);
+								
+								if (line.hasNext()) {
+									String doneCheck = line.next();
+									if (doneCheck.equals("done")) {
+										readingInput = false;
+									}
+								}
+							}
+						}
+						
+						if (inputOutputCheck.equals("output:")) {
+							Scanner line = new Scanner(reader.nextLine());
+							String inID = line.next();
+							String inUUID = line.next();
+							
+							Node.Output toOutput = new Node.Output(inID, uuid);
+							toOutput.uuid = inUUID;
+							
+							outputs.add(toOutput);
+						}
+						
+						inputOutputCheck = reader.nextLine();
+						if (inputOutputCheck.equals("output:")) {
+							Scanner line = new Scanner(reader.nextLine());
+							String inID = line.next();
+							String inUUID = line.next();
+							
+							Node.Output toOutput = new Node.Output(inID, uuid);
+							toOutput.uuid = inUUID;
+							
+							outputs.add(toOutput);
+							reader.nextLine();
+						}
+						
+						Node toMake = new Node(x,y,id,null,null, nodeFont);
+						toMake.uuid = uuid;
+						
+						if (inputs.size() > 0) {
+							Node.Input[] inputsArray = new Node.Input[inputs.size()];
+							for (int i = 0; i < inputs.size(); i++) {
+								inputsArray[i] = inputs.get(i);
+							}
+							toMake.inputs = inputsArray;
+						}
+						
+						if (outputs.size() > 0) {
+							Node.Output[] outputsArray = new Node.Output[outputs.size()];
+							for (int i = 0; i < outputs.size(); i++) {
+								outputsArray[i] = outputs.get(i);
+							}
+							toMake.outputs = outputsArray;
+						}
+						
+						inputs.clear();
+						outputs.clear();
+						nodes.add(toMake);
+					}
+					Scanner line = new Scanner(readLine);
+					if (line.next().equals("con:")) {
+						String outputUUID = line.next();
+						String inputUUID = line.next();
+						Node.Output find = searchByUUID(outputUUID);
+						find.createConnection(inputUUID, engine, nodes, ranUUIDs);
+					}
+				}
 	}
 }

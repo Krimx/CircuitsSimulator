@@ -27,7 +27,8 @@ public class Node {
 			"nor",
 			"xnor",
 			"switch",
-			"light"};
+			"light",
+			"custom"};
 	public Color[] cols = {
 			new Color(53,205,159),
 			new Color(53,124,205),
@@ -37,7 +38,8 @@ public class Node {
 			new Color(255,193,100),
 			new Color(205,249,130),
 			null,
-			null};
+			null,
+			new Color(205,249,130)};
 	
 	public Node(int x, int y, String id, String[] inputs, String[] outputs, Font nodeFont) {
 		this.id = id;
@@ -121,6 +123,13 @@ public class Node {
 			
 			this.outputs[0] = new Output("output", this.uuid);
 		}
+		else if (this.id.equals("custom")) {
+			this.inputs = new Input[1];
+			this.outputs = new Output[1];
+
+			this.inputs[0] = new Input("input", this.uuid);
+			this.outputs[0] = new Output("output", this.uuid);
+		}
 		else {
 			this.inputs = new Input[inputs.length];
 			this.outputs = new Output[outputs.length];
@@ -145,6 +154,7 @@ public class Node {
 		else if (this.id.equals("nand")) this.w = 65;
 		else if (this.id.equals("nor")) this.w = 50;
 		else if (this.id.equals("xnor")) this.w = 55;
+		else if (this.id.equals("custom")) this.w = 90;
 		else this.w = 100;
 		
 		this.color = cols[indexOf(this.id, ids)];

@@ -171,10 +171,10 @@ public class DisplayNode {
 	}
 	
 	public boolean mouseIsHovering(Engine engine) {
-		if (engine.mouse.getX() >= this.x - (this.w / 2) - engine.camera.getX() &&
-			engine.mouse.getX() <= this.x + (this.w / 2) - engine.camera.getX()  &&
-			engine.mouse.getY() >= this.y - (this.h / 2) - engine.camera.getY()  &&
-			engine.mouse.getY() <= this.y + (this.h / 2) - engine.camera.getY() )
+		if (engine.mouse.getX() >= this.x - (this.w / 2) &&
+			engine.mouse.getX() <= this.x + (this.w / 2) &&
+			engine.mouse.getY() >= this.y - (this.h / 2) &&
+			engine.mouse.getY() <= this.y + (this.h / 2))
 		{
 			return true;
 		}

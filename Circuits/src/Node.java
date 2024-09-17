@@ -17,6 +17,9 @@ public class Node {
 	public int grabX, grabY;
 	public boolean pointHovering;
 	public int pointRad;
+	public boolean selected;
+	public int groupXOffset;
+	public int groupYOffset;
 	
 	public String[] ids = {
 			"and",
@@ -48,6 +51,9 @@ public class Node {
 		this.uuid = UUID.randomUUID().toString();
 		this.pointHovering = false;
 		this.pointRad = 4;
+		this.selected = false;
+		this.groupXOffset = 0;
+		this.groupYOffset = 0;
 
 		if (this.id.equals("and")) {
 			this.inputs = new Input[2];
@@ -401,6 +407,7 @@ public class Node {
 		}
 		g.fillRect(x - (this.w / 2), y - (this.h / 2), w, h);
 		g.setColor(Color.black);
+		if (this.selected) g.setColor(Color.yellow);
 		g.drawRect(x - (this.w / 2), y - (this.h / 2), w, h);
 		
 		g.setColor(Color.black);
@@ -452,6 +459,7 @@ public class Node {
 		}
 		g.fillRect(x - (this.w / 2) - camera.getX(), y - (this.h / 2) - camera.getY(), w, h);
 		g.setColor(Color.black);
+		if (this.selected) g.setColor(Color.yellow);
 		g.drawRect(x - (this.w / 2) - camera.getX(), y - (this.h / 2) - camera.getY(), w, h);
 		
 		g.setColor(Color.black);
@@ -569,7 +577,6 @@ public class Node {
 	}
 	
 	public void prepareForRemoval(ArrayList<Node> nodes) {
-		System.out.println(this.id);
 		for (int i = 0; i < this.inputs.length; i++) {
 			Output toCut = searchOutputsByUUID(nodes, this.inputs[i].connectedUUID);
 			if (toCut != null) toCut.severConnection(nodes, inputs[i].uuid);
@@ -586,7 +593,6 @@ public class Node {
 				break;
 			}
 		}
-		System.out.println(this.uuid);
 		
 		nodes.remove(toPop);
 	}

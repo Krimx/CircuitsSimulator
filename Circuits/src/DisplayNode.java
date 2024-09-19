@@ -1,6 +1,9 @@
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Stroke;
 import java.util.ArrayList;
 import java.util.UUID;
 
@@ -140,27 +143,35 @@ public class DisplayNode {
 	}
 	
 	public void render(Graphics g, Font pointFont, Font nodeFont) {
-		g.setColor(this.color);
+		Graphics2D g2d = (Graphics2D) g;
+		Stroke origStroke = g2d.getStroke();
 		
-		g.fillRect(x - (this.w / 2), y - (this.h / 2), w, h);
-		g.setColor(Color.black);
-		g.drawRect(x - (this.w / 2), y - (this.h / 2), w, h);
+		g2d.setColor(this.color);
 		
-		g.setColor(Color.black);
-		g.setFont(nodeFont);
-		g.drawString(this.id, this.x - (this.w / 2) + 10, this.y + 8);
+		g2d.fillRoundRect(x - (this.w / 2), y - (this.h / 2), w, h, Math.min(w, h) / Main.nodeCornerArc, Math.min(w, h) / Main.nodeCornerArc);
+		g2d.setColor(Color.black);
+		g2d.setStroke(new BasicStroke(Main.nodeOutlineWidth));
+		g2d.drawRoundRect(x - (this.w / 2), y - (this.h / 2), w, h, Math.min(w, h) / Main.nodeCornerArc, Math.min(w, h) / Main.nodeCornerArc);
+		g2d.setStroke(origStroke);
+		
+		g2d.setColor(Color.black);
+		g2d.setFont(nodeFont);
+		g2d.drawString(this.id, this.x - (this.w / 2) + 10, this.y + 8);
 	}
 	
 	public void render(Graphics g, Engine engine, Font pointFont, Font nodeFont, Engine.Camera camera, ArrayList<Node> nodes, String grabbedUUID) {
-		g.setColor(this.color);
+		Graphics2D g2d = (Graphics2D) g;
+		int cornerCircle = 3;
 		
-		g.fillRect(x - (this.w / 2) - camera.getX(), y - (this.h / 2) - camera.getY(), w, h);
-		g.setColor(Color.black);
-		g.drawRect(x - (this.w / 2) - camera.getX(), y - (this.h / 2) - camera.getY(), w, h);
+		g2d.setColor(this.color);
 		
-		g.setColor(Color.black);
-		g.setFont(nodeFont);
-		g.drawString(this.id, this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY());
+		g2d.fillRoundRect(x - (this.w / 2) - camera.getX(), y - (this.h / 2) - camera.getY(), w, h, Math.min(w, h) / cornerCircle, Math.min(w, h) / cornerCircle);
+		g2d.setColor(Color.black);
+		g2d.drawRoundRect(x - (this.w / 2) - camera.getX(), y - (this.h / 2) - camera.getY(), w, h, Math.min(w, h) / cornerCircle, Math.min(w, h) / cornerCircle);
+		
+		g2d.setColor(Color.black);
+		g2d.setFont(nodeFont);
+		g2d.drawString(this.id, this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY());
 		
 		this.pointHovering = false;
 	}

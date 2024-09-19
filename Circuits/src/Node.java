@@ -1,7 +1,9 @@
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Stroke;
 import java.util.ArrayList;
 import java.util.UUID;
 
@@ -20,6 +22,7 @@ public class Node {
 	public boolean selected;
 	public int groupXOffset;
 	public int groupYOffset;
+	public int transistors;
 	
 	public String[] ids = {
 			"and",
@@ -50,12 +53,14 @@ public class Node {
 		this.y = y;
 		this.uuid = UUID.randomUUID().toString();
 		this.pointHovering = false;
-		this.pointRad = 4;
+		this.pointRad = 5;
 		this.selected = false;
 		this.groupXOffset = 0;
 		this.groupYOffset = 0;
+		this.transistors = 0;
 
 		if (this.id.equals("and")) {
+			this.transistors = 3;
 			this.inputs = new Input[2];
 			this.outputs = new Output[1];
 
@@ -65,6 +70,7 @@ public class Node {
 			this.outputs[0] = new Output("output", this.uuid);
 		}
 		else if (this.id.equals("or")) {
+			this.transistors = 3;
 			this.inputs = new Input[2];
 			this.outputs = new Output[1];
 
@@ -74,6 +80,7 @@ public class Node {
 			this.outputs[0] = new Output("output", this.uuid);
 		}
 		else if (this.id.equals("not")) {
+			this.transistors = 1;
 			this.inputs = new Input[1];
 			this.outputs = new Output[1];
 
@@ -94,6 +101,7 @@ public class Node {
 			this.inputs[0] = new Input("input", this.uuid);
 		}
 		else if (this.id.equals("xor")) {
+			this.transistors = 6;
 			this.inputs = new Input[2];
 			this.outputs = new Output[1];
 
@@ -103,6 +111,7 @@ public class Node {
 			this.outputs[0] = new Output("output", this.uuid);
 		}
 		else if (this.id.equals("nand")) {
+			this.transistors = 2;
 			this.inputs = new Input[2];
 			this.outputs = new Output[1];
 
@@ -112,6 +121,7 @@ public class Node {
 			this.outputs[0] = new Output("output", this.uuid);
 		}
 		else if (this.id.equals("nor")) {
+			this.transistors = 2;
 			this.inputs = new Input[2];
 			this.outputs = new Output[1];
 
@@ -121,6 +131,7 @@ public class Node {
 			this.outputs[0] = new Output("output", this.uuid);
 		}
 		else if (this.id.equals("xnor")) {
+			this.transistors = 16;
 			this.inputs = new Input[2];
 			this.outputs = new Output[1];
 
@@ -447,24 +458,30 @@ public class Node {
 	}
 	
 	public void render(Graphics g, Engine engine, Font pointFont, Font nodeFont, Engine.Camera camera, ArrayList<Node> nodes, String grabbedUUID) {
+		Graphics2D g2d = (Graphics2D) g;
+		Stroke origStroke = g2d.getStroke();
 		
-		g.setColor(this.color);
+		g2d.setColor(this.color);
 		if (this.id.equals("switch")) {
-			if (this.outputs[0].state) g.setColor(new Color(49,250,52));
-			else g.setColor(new Color(6,63,16));
+			if (this.outputs[0].state) g2d.setColor(new Color(49,250,52));
+			else g2d.setColor(new Color(6,63,16));
 		}
 		if (this.id.equals("light")) {
-			if (this.inputs[0].state) g.setColor(new Color(45,225,245));
-			else g.setColor(new Color(16,34,68));
+			if (this.inputs[0].state) g2d.setColor(new Color(45,225,245));
+			else g2d.setColor(new Color(16,34,68));
 		}
-		g.fillRect(x - (this.w / 2) - camera.getX(), y - (this.h / 2) - camera.getY(), w, h);
-		g.setColor(Color.black);
-		if (this.selected) g.setColor(Color.yellow);
-		g.drawRect(x - (this.w / 2) - camera.getX(), y - (this.h / 2) - camera.getY(), w, h);
+		//g2d.fillRect(x - (this.w / 2) - camera.getX(), y - (this.h / 2) - camera.getY(), w, h);
+		g2d.fillRoundRect(x - (this.w / 2) - camera.getX(), y - (this.h / 2) - camera.getY(), w, h, Math.min(w, h) / Main.nodeCornerArc, Math.min(w, h) / Main.nodeCornerArc);
+		g2d.setColor(Color.black);
+		if (this.selected) g2d.setColor(Color.yellow);
+		//g2d.drawRect(x - (this.w / 2) - camera.getX(), y - (this.h / 2) - camera.getY(), w, h);
+		g2d.setStroke(new BasicStroke(Main.nodeOutlineWidth));
+		g2d.drawRoundRect(x - (this.w / 2) - camera.getX(), y - (this.h / 2) - camera.getY(), w, h, Math.min(w, h) / Main.nodeCornerArc, Math.min(w, h) / Main.nodeCornerArc);
+		g2d.setStroke(origStroke);
 		
-		g.setColor(Color.black);
-		g.setFont(nodeFont);
-		g.drawString(this.id, this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY());
+		g2d.setColor(Color.black);
+		g2d.setFont(nodeFont);
+		g2d.drawString(this.id, this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY());
 		
 		this.pointHovering = false;
 
@@ -479,24 +496,24 @@ public class Node {
 			boolean mouseHover = inRad(toX, toY, rad, engine.mouse.getX(), engine.mouse.getY());
 			
 			if (mouseHover) {
-				g.setColor(new Color(203, 200, 183));
+				g2d.setColor(new Color(203, 200, 183));
 				this.pointHovering = true;
 			}
 			else {
-				g.setColor(new Color(243, 240, 226));
+				g2d.setColor(new Color(243, 240, 226));
 			}
 			
-			g.fillOval(toX - rad, toY - rad, rad * 2, rad * 2);
+			g2d.fillOval(toX - rad, toY - rad, rad * 2, rad * 2);
 			
-			g.setColor(Color.black);
-			g.drawOval(toX - rad, toY - rad, rad * 2, rad * 2);
+			g2d.setColor(Color.black);
+			g2d.drawOval(toX - rad, toY - rad, rad * 2, rad * 2);
 			
 			//Rendering the id if the mouse is hovering
 			if (mouseHover) {
-				g.setFont(pointFont);
-				g.setColor(Color.white);
-				int strWidth = g.getFontMetrics().stringWidth(this.inputs[i].id);
-				g.drawString(this.inputs[i].id, toX - strWidth - 5, toY - 8);
+				g2d.setFont(pointFont);
+				g2d.setColor(Color.white);
+				int strWidth = g2d.getFontMetrics().stringWidth(this.inputs[i].id);
+				g2d.drawString(this.inputs[i].id, toX - strWidth - 5, toY - 8);
 			}
 		}
 		
@@ -507,34 +524,43 @@ public class Node {
 			this.outputs[i].trueX = toX;
 			this.outputs[i].trueY = toY;
 			
-			//Drawing lines between connected inputs and outputs
-			for (int j = 0; j < this.outputs[i].connections.size(); j++) {
-				Line con = this.outputs[i].connections.get(j);
-				if (con != null) {
-					g.setColor(Color.red);
-					g.drawLine(con.x1, con.y1, con.x2, con.y2);
-				}
-			}
-			
 			boolean mouseHover = inRad(toX, toY, rad, engine.mouse.getX(), engine.mouse.getY());
 			
 			if (mouseHover) {
-				g.setColor(new Color(203, 200, 183));
+				g2d.setColor(new Color(203, 200, 183));
 				this.pointHovering = true;
 			}
 			else {
-				g.setColor(new Color(243, 240, 226));
+				g2d.setColor(new Color(243, 240, 226));
 			}
 			
-			g.fillOval(toX - rad, toY - rad, rad * 2, rad * 2);
+			g2d.fillOval(toX - rad, toY - rad, rad * 2, rad * 2);
 			
-			g.setColor(Color.black);
-			g.drawOval(toX - rad, toY - rad, rad * 2, rad * 2);
+			g2d.setColor(Color.black);
+			g2d.drawOval(toX - rad, toY - rad, rad * 2, rad * 2);
 			
 			if (mouseHover) {
-				g.setFont(pointFont);
-				g.setColor(Color.white);
-				g.drawString(this.outputs[i].id, toX + 5, toY - 8);
+				g2d.setFont(pointFont);
+				g2d.setColor(Color.white);
+				g2d.drawString(this.outputs[i].id, toX + 5, toY - 8);
+			}
+		}
+	}
+	
+	public void drawConnectionLines(Graphics g, Engine engine, Font pointFont, Font nodeFont, Engine.Camera camera, ArrayList<Node> nodes, String grabbedUUID) {
+		Graphics2D g2d = (Graphics2D) g;
+		Stroke origStroke = g2d.getStroke();
+		
+		for (int i = 0; i < this.outputs.length; i++) {
+			for (int j = 0; j < this.outputs[i].connections.size(); j++) {
+				Line con = this.outputs[i].connections.get(j);
+				if (con != null) {
+					if (this.outputs[i].state) g2d.setColor(Main.onLineColor);
+					else g2d.setColor(Main.offLineColor);
+					g2d.setStroke(new BasicStroke(Main.connectionLineWidth));
+					g2d.drawLine(con.x1, con.y1, con.x2, con.y2);
+					g2d.setStroke(origStroke);
+				}
 			}
 		}
 	}

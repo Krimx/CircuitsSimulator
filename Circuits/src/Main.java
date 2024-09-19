@@ -1,4 +1,5 @@
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -20,42 +21,6 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 //TODO: Find solution to crashing when connection a node to a node that connects back to it
 	//I did a fix but im not sure if it gives desirable behavior. it involves telling the circuit what nodes were ran and not letting them run again for the tick
 //TODO: Custom nodes by grouping nodes and clicking a button or something to create a custom node. Save the node in the project file (idk figure it out)
-
-class ControlsPanel extends JPanel {
-	public void paintComponent(Graphics g) {
-		g.setColor(new Color(55, 55, 65));
-		g.fillRect(0, 0, 1000, 1000);
-		
-		//Control and use guide
-		g.setFont(Main.nodeFont);
-		g.setColor(Color.black);
-		g.drawString("[1]: ", Main.exampleSwitch.x - 75, Main.exampleSwitch.y + 6);
-		g.drawString("[2]: ", Main.exampleSwitch.x - 75, Main.exampleLight.y + 6);
-		g.drawString("[3]: ", Main.exampleSwitch.x - 75, Main.exampleAnd.y + 6);
-		g.drawString("[4]: ", Main.exampleSwitch.x - 75, Main.exampleOr.y + 6);
-		g.drawString("[5]: ", Main.exampleSwitch.x - 75, Main.exampleNot.y + 6);
-		g.drawString("[6]: ", Main.exampleSwitch.x - 75, Main.exampleXor.y + 6);
-		g.drawString("[7]: ", Main.exampleSwitch.x - 75, Main.exampleNand.y + 6);
-		g.drawString("[8]: ", Main.exampleSwitch.x - 75, Main.exampleNor.y + 6);
-		g.drawString("[9]: ", Main.exampleSwitch.x - 75, Main.exampleXnor.y + 6);
-
-		Main.exampleSwitch.render(g, Main.pointFont, Main.nodeFont);
-		Main.exampleLight.render(g, Main.pointFont, Main.nodeFont);
-		Main.exampleAnd.render(g, Main.pointFont, Main.nodeFont);
-		Main.exampleOr.render(g, Main.pointFont, Main.nodeFont);
-		Main.exampleNot.render(g, Main.pointFont, Main.nodeFont);
-		Main.exampleXor.render(g, Main.pointFont, Main.nodeFont);
-		Main.exampleNand.render(g, Main.pointFont, Main.nodeFont);
-		Main.exampleNor.render(g, Main.pointFont, Main.nodeFont);
-		Main.exampleXnor.render(g, Main.pointFont, Main.nodeFont);
-		
-		g.setFont(Main.nodeFont);
-		g.setColor(Color.black);
-		g.drawString("Shift + Left Click: Delete Node", Main.exampleSwitch.x + 75, Main.exampleSwitch.y + 6);
-		g.drawString("Right Click + Drag: Sever Link", Main.exampleLight.x + 75, Main.exampleLight.y + 6);
-		g.drawString("Middle Mouse + Drag: Look Around", Main.exampleAnd.x + 75, Main.exampleAnd.y + 6);
-	}
-}
 
 //Something needed for file loading and saving. Still not entirely sure how it works
 class FileTypeFilter implements FileFilter {
@@ -96,25 +61,22 @@ public class Main {
 	public static String chosenFilePath = "";
 	public static String saveFilePath = "";
 	
-	//Two windows, one for "canvas" and one for controls guide. consider merging into one for dragging from selection menu
-	public static JFrame controlsFrame = new JFrame();
-	public static ControlsPanel controlsPanel = new ControlsPanel();
-	
 	//Visual user guide (prone to being changed for visual and ui overhual)
 	public static int yOffset = -40;
-	public static Node exampleSwitch = new Node(100,100 + yOffset,"switch", null, null, nodeFont);
-	public static Node exampleLight = new Node(100,180 + yOffset,"light", null, null, nodeFont);
-	public static Node exampleAnd = new Node(100,260 + yOffset,"and", null, null, nodeFont);
-	public static Node exampleOr = new Node(100,340 + yOffset,"or", null, null, nodeFont);
-	public static Node exampleNot = new Node(100,420 + yOffset,"not", null, null, nodeFont);
-	public static Node exampleXor = new Node(100,500 + yOffset,"xor", null, null, nodeFont);
-	public static Node exampleNand = new Node(100,580 + yOffset,"nand", null, null, nodeFont);
-	public static Node exampleNor = new Node(100,660 + yOffset,"nor", null, null, nodeFont);
-	public static Node exampleXnor = new Node(100,740 + yOffset,"xnor", null, null, nodeFont);
+
+	public static Color bgColor = new Color(100,94,101);
+	public static Color drawLineColor = new Color(255,255,255);
+	public static Color offLineColor = new Color(105,0,0);
+	public static Color onLineColor = new Color(240,0,0);
+	public static Color severLineColor = new Color(0,0,0);
+	public static int nodeOutlineWidth = 3;
+	public static int nodeCornerArc = 3;
+	public static int connectionLineWidth = 3;
 	
 	public static ArrayList<String> ranUUIDs = new ArrayList<>();
 	
 	public static int transCount = 0;
+	public static boolean startedLeft = false;
 	
 	public static ArrayList<DisplayNode> menuNodes = new ArrayList<>();
 	
@@ -157,12 +119,8 @@ public class Main {
 		//Do ingine initialization process
 		engine.initializeJFrame(800, 800, false, false, 60);
 		
-		//Second jframe initialization
-		controlsFrame.setSize(500,800);
-		controlsFrame.setLocationRelativeTo(engine.frame);
-		controlsFrame.setLocation(engine.frame.getLocation().x + engine.scrWidth, engine.frame.getLocation().x);
-		controlsFrame.getContentPane().add(controlsPanel);
-		controlsFrame.setVisible(true);
+		engine.scr.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+		
 		engine.frame.setVisible(true);
 
 		addDisplayNode("switch", 50);
@@ -188,14 +146,29 @@ public class Main {
 	
 	public static void paintNodes(Graphics g) {
 		//Iterate over every node instance and render
+		boolean hovering = false;
+		
+		for (int i = 0; i < nodes.size(); i++) {
+			nodes.get(i).drawConnectionLines(g, engine, pointFont, nodeFont, engine.camera, nodes, grabbedUUID);
+		}
+		
 		for (int i = 0; i < nodes.size(); i++) {
 			nodes.get(i).render(g, engine, pointFont, nodeFont, engine.camera, nodes, grabbedUUID);
-			if (engine.keys.LSHIFT() && nodes.get(i).mouseIsHovering(engine)) {
-				g.drawImage(trashCan, nodes.get(i).x + (nodes.get(i).w / 2) - 5, nodes.get(i).y - (nodes.get(i).h / 2) - 15, 30, 30, null);
+			if (nodes.get(i).mouseIsHovering(engine)) {
+				hovering = true;
+				engine.scr.setCursor(new Cursor(Cursor.HAND_CURSOR));
+				if (engine.keys.LSHIFT()) {
+					g.drawImage(trashCan, nodes.get(i).x + (nodes.get(i).w / 2) - 5 - engine.camera.getX(), nodes.get(i).y - (nodes.get(i).h / 2) - 15 - engine.camera.getY(), 30, 30, null);
+				}
+			}
+			else {
+				if (!hovering) engine.scr.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 			}
 		}
 		
 		//If holding middle mouse button, drag camera around with mouse movement
+		
+		
 		if (engine.mouse.MIDDLE()) {
 			int[] delta = engine.mouse.getDelta();
 			engine.camera.addX(-delta[0]);
@@ -208,13 +181,13 @@ public class Main {
 		
 		//If holding right click, draw sever line
 		if (engine.mouse.RIGHT()) {
-			g.setColor(new Color(255,255,255,100));
+			g.setColor(severLineColor);
 			g.drawLine(severLine.x1, severLine.y1, severLine.x2, severLine.y2);
 		}
 		
 		//If holding an input/output, draw a line from cursor to held
 		if (!grabbedUUID.equals("")) {
-			g.setColor(new Color(100,100,100,100));
+			g.setColor(drawLineColor);
 			Node.Output output = searchByUUID(grabbedUUID);
 			g.drawLine(output.trueX, output.trueY, engine.mouse.getX(), engine.mouse.getY());
 		}
@@ -232,7 +205,7 @@ public class Main {
 	}
 
 	public static void paintToFrame(Graphics g) {
-		engine.setBackground(g, new Color(65, 65, 75));
+		engine.setBackground(g, bgColor);
 		paintNodes(g);
 		paintDisplayNodes(g);
 		
@@ -315,29 +288,33 @@ public class Main {
 		
 		//If holding left click and not shift, grab node
 		if (engine.mouse.LEFT()) {
-			for (Node node : nodes) {
-				for (Node.Output output : node.outputs) {
-					if (node.inRad(output.trueX, output.trueY, node.pointRad, engine.mouse.getX(), engine.mouse.getY())) {
-						grabbedUUID = output.uuid;
+			if (!startedLeft) {
+				for (Node node : nodes) {
+					for (Node.Output output : node.outputs) {
+						if (node.inRad(output.trueX, output.trueY, node.pointRad, engine.mouse.getX(), engine.mouse.getY())) {
+							grabbedUUID = output.uuid;
+						}
+					}
+					if (grabbedUUID.equals("") && grabbedNode.equals("")) {
+						if (node.mouseIsHovering(engine)) grabbedNode = node.uuid;
 					}
 				}
-				if (grabbedUUID.equals("") && grabbedNode.equals("")) {
-					if (node.mouseIsHovering(engine)) grabbedNode = node.uuid;
+				for (DisplayNode node : menuNodes) {
+					if (node.mouseIsHovering(engine) && grabbedNode.equals("")) {
+						nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), node.id, null, null, nodeFont));
+						grabbedNode = nodes.get(nodes.size() - 1).uuid;
+						break;
+					}
 				}
 			}
-			for (DisplayNode node : menuNodes) {
-				if (node.mouseIsHovering(engine) && grabbedNode.equals("")) {
-					nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), node.id, null, null, nodeFont));
-					grabbedNode = nodes.get(nodes.size() - 1).uuid;
-					break;
-				}
-			}
+			
 			if (!grabbedNode.equals("")) { //If already grabbed node, can't grab more (also filter for grabbing input/output)
 				Node grabbed = searchNodesByUUID(grabbedNode);
 				grabbed.x = engine.mouse.getX() + engine.camera.getX();
 				grabbed.y = engine.mouse.getY() + engine.camera.getY();
 				grabbed.redrawConnections(nodes, engine);
 			}
+			startedLeft = true;
 		}
 		else {
 			if (!grabbedUUID.equals("")) {
@@ -351,6 +328,7 @@ public class Main {
 					}
 				}
 			}
+			startedLeft = false;
 			grabbedUUID = "";
 			grabbedNode = "";
 		}
@@ -412,7 +390,7 @@ public class Main {
 		int toOut = 0;
 		
 		for (int i = 0; i < nodes.size(); i++) {
-			if (nodes.get(i).inputs.length > 0 && nodes.get(i).outputs.length > 0) toOut += (2 * nodes.get(i).inputs.length) + 1;
+			toOut += nodes.get(i).transistors;
 		}
 		
 		return toOut;
@@ -589,5 +567,17 @@ public class Main {
 		return toOut;
 	}
 
-	
+	public int getCriticalPathDelay() {
+		/*
+		 * Idea: iterate over every switch, go through the output into the next input until reaching a light while gathering the total gate delay times
+		 * Collect all total gate delay times and pick max as critical path delay
+		 */
+		
+		for (int i = 0; i < nodes.size(); i++) {
+			
+		}
+		
+		int toOut = 0;
+		return toOut;
+	}
 }

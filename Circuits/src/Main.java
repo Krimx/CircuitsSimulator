@@ -10,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Scanner;
 
 import javax.imageio.ImageIO;
@@ -75,7 +76,8 @@ public class Main {
 	
 	public static ArrayList<String> ranUUIDs = new ArrayList<>();
 	
-	public static int transCount = 0;
+	public static int transCount = 0, critPathDelay = 0, currentPathDelay = 0;
+	public static ArrayList<Integer> pathDelays = new ArrayList<>();
 	public static boolean startedLeft = false;
 	
 	public static ArrayList<DisplayNode> menuNodes = new ArrayList<>();
@@ -119,8 +121,6 @@ public class Main {
 		//Do ingine initialization process
 		engine.initializeJFrame(800, 800, false, false, 60);
 		
-		engine.scr.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-		
 		engine.frame.setVisible(true);
 
 		addDisplayNode("switch", 50);
@@ -156,13 +156,9 @@ public class Main {
 			nodes.get(i).render(g, engine, pointFont, nodeFont, engine.camera, nodes, grabbedUUID);
 			if (nodes.get(i).mouseIsHovering(engine)) {
 				hovering = true;
-				engine.scr.setCursor(new Cursor(Cursor.HAND_CURSOR));
 				if (engine.keys.LSHIFT()) {
 					g.drawImage(trashCan, nodes.get(i).x + (nodes.get(i).w / 2) - 5 - engine.camera.getX(), nodes.get(i).y - (nodes.get(i).h / 2) - 15 - engine.camera.getY(), 30, 30, null);
 				}
-			}
-			else {
-				if (!hovering) engine.scr.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 			}
 		}
 		
@@ -212,6 +208,8 @@ public class Main {
 		g.setFont(nodeFont);
 		g.setColor(Color.black);
 		g.drawString("Transistors: " + String.valueOf(getAmountOfTransistors()), 10, 50);
+		getCriticalPathDelay();
+		g.drawString("Critical Path Delay: " + critPathDelay + "ns", 10, 100);
 	}
 
 	public static void mainLoop() {
@@ -376,6 +374,16 @@ public class Main {
 			}
 		}
 		return output;
+	}
+	
+	public static Node.Input searchInputsByUUID(String uuid) {
+		Node.Input input = null;
+		for (int i = 0; i < nodes.size(); i++) {
+			for (int j = 0; j < nodes.get(i).inputs.length; j++) {
+				if (nodes.get(i).inputs[j].uuid.equals(uuid)) input = nodes.get(i).inputs[j];
+			}
+		}
+		return input;
 	}
 	
 	public static Node searchNodesByUUID(String toCheck) {
@@ -567,17 +575,39 @@ public class Main {
 		return toOut;
 	}
 
-	public int getCriticalPathDelay() {
+	public static void getCriticalPathDelay() {
 		/*
 		 * Idea: iterate over every switch, go through the output into the next input until reaching a light while gathering the total gate delay times
 		 * Collect all total gate delay times and pick max as critical path delay
 		 */
+		critPathDelay = 0;
+		pathDelays.clear();
+		
 		
 		for (int i = 0; i < nodes.size(); i++) {
-			
+			if (nodes.get(i).id.equals("switch")) {
+				currentPathDelay = 0;
+				propogateNodes(nodes.get(i));
+				pathDelays.add(currentPathDelay);
+			}
 		}
 		
-		int toOut = 0;
-		return toOut;
+		if (pathDelays.size() > 0) {
+			Collections.sort(pathDelays);
+			critPathDelay = pathDelays.get(pathDelays.size() - 1);
+		}
+	}
+	
+	public static void propogateNodes(Node node) {
+		if (node.id.equals("light")) return;
+		else {
+			for (int i = 0; i < node.outputs.length; i++) {
+				for (int ii = 0; ii < node.outputs[i].connectedUUIDs.size(); ii++) {
+					currentPathDelay += node.inputs.length;
+					Node toProp = searchNodesByUUID(searchInputsByUUID(node.outputs[i].connectedUUIDs.get(ii)).parentUUID);
+					propogateNodes(toProp);
+				}
+			}
+		}
 	}
 }

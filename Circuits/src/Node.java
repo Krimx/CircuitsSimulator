@@ -23,6 +23,7 @@ public class Node {
 	public int groupXOffset;
 	public int groupYOffset;
 	public int transistors;
+	public int pointProx;
 	
 	public String[] ids = {
 			"and",
@@ -58,6 +59,7 @@ public class Node {
 		this.groupXOffset = 0;
 		this.groupYOffset = 0;
 		this.transistors = 0;
+		this.pointProx = 10;
 
 		if (this.id.equals("and")) {
 			this.transistors = 3;
@@ -493,7 +495,7 @@ public class Node {
 			this.inputs[i].trueX = toX;
 			this.inputs[i].trueY = toY;
 			
-			boolean mouseHover = inRad(toX, toY, rad, engine.mouse.getX(), engine.mouse.getY());
+			boolean mouseHover = inProx(toX, toY, rad, engine.mouse.getX(), engine.mouse.getY(), this.pointProx);
 			
 			if (mouseHover) {
 				g2d.setColor(new Color(203, 200, 183));
@@ -524,7 +526,7 @@ public class Node {
 			this.outputs[i].trueX = toX;
 			this.outputs[i].trueY = toY;
 			
-			boolean mouseHover = inRad(toX, toY, rad, engine.mouse.getX(), engine.mouse.getY());
+			boolean mouseHover = inProx(toX, toY, rad, engine.mouse.getX(), engine.mouse.getY(), this.pointProx);
 			
 			if (mouseHover) {
 				g2d.setColor(new Color(203, 200, 183));
@@ -590,6 +592,14 @@ public class Node {
 		boolean in = false;
 		
 		if (checkX >= x - rad && checkX <= x + rad && checkY >= y - rad && checkY <= y + rad) in = true;
+		
+		return in;
+	}
+	
+	public boolean inProx(int x, int y, int rad, int checkX, int checkY, int prox) {
+		boolean in = false;
+		
+		if (checkX >= x - rad - prox && checkX <= x + rad + prox && checkY >= y - rad - prox && checkY <= y + rad + prox) in = true;
 		
 		return in;
 	}

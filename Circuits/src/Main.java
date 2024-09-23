@@ -287,16 +287,20 @@ public class Main {
 		//If holding left click and not shift, grab node
 		if (engine.mouse.LEFT()) {
 			if (!startedLeft) {
+				boolean grabbedSomething = false;
 				for (Node node : nodes) {
 					for (Node.Output output : node.outputs) {
-						if (node.inRad(output.trueX, output.trueY, node.pointRad, engine.mouse.getX(), engine.mouse.getY())) {
+						if (node.inProx(output.trueX, output.trueY, node.pointRad, engine.mouse.getX(), engine.mouse.getY(), node.pointProx)) {
 							grabbedUUID = output.uuid;
+							grabbedSomething = true;
 						}
 					}
 					if (grabbedUUID.equals("") && grabbedNode.equals("")) {
 						if (node.mouseIsHovering(engine)) grabbedNode = node.uuid;
+						grabbedSomething = true;
 					}
 				}
+				
 				for (DisplayNode node : menuNodes) {
 					if (node.mouseIsHovering(engine) && grabbedNode.equals("")) {
 						nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), node.id, null, null, nodeFont));
@@ -318,7 +322,7 @@ public class Main {
 			if (!grabbedUUID.equals("")) {
 				for (Node node : nodes) {
 					for (Node.Input input : node.inputs) {
-						if (node.inRad(input.trueX, input.trueY, node.pointRad, engine.mouse.getX(), engine.mouse.getY())) {
+						if (node.inProx(input.trueX, input.trueY, node.pointRad, engine.mouse.getX(), engine.mouse.getY(), node.pointProx)) {
 							if (!input.uuid.equals(grabbedUUID) && !grabbedUUID.equals("")) {
 								searchByUUID(grabbedUUID).createConnection(input.uuid, engine, nodes, ranUUIDs);
 							}

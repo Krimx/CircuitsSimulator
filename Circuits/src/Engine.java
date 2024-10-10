@@ -986,6 +986,7 @@ public class Engine {
 		private int dX = 0, dY = 0;
 		private Robot bot;
 		private int xOffset = 0, yOffset = 0;
+		private boolean verticalScroll = true;
 		
 		public Mouse() {
 			this.xOffset = 0;
@@ -1081,10 +1082,14 @@ public class Engine {
 		public void mouseWheelMoved(MouseWheelEvent e) {
 	    	scroll -= e.getWheelRotation();
 	    	scrollDifference = -e.getWheelRotation();
+	    	
+	    	if (e.isShiftDown()) this.verticalScroll = false;
+	    	else this.verticalScroll = true;
 		}
 		
 		public int getX() {return x + xOffset;}
 		public int getY() {return y + yOffset;}
+		public boolean getIsVerticalScroll() {return this.verticalScroll;}
 
 		public int[] getDelta() {
 			int[] toOut = {dX,dY};

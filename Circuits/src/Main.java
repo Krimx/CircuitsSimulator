@@ -163,8 +163,6 @@ public class Main {
 		}
 		
 		//If holding middle mouse button, drag camera around with mouse movement
-		
-		
 		if (engine.mouse.MIDDLE()) {
 			int[] delta = engine.mouse.getDelta();
 			engine.camera.addX(-delta[0]);
@@ -174,6 +172,12 @@ public class Main {
 				nodes.get(i).redrawConnections(nodes, engine);
 			}
 		}
+		
+		//Trackpad panning support area
+		double scrollMultiplier = 1.5;
+		int scrollDifference = (int) (engine.mouse.getScrollDifference() * scrollMultiplier);
+		if (engine.mouse.getIsVerticalScroll()) engine.camera.addY(-scrollDifference);
+		else engine.camera.addX(-scrollDifference);
 		
 		//If holding right click, draw sever line
 		if (engine.mouse.RIGHT()) {

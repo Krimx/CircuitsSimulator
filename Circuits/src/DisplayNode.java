@@ -26,6 +26,7 @@ public class DisplayNode {
 			"xnor",
 			"switch",
 			"light",
+			"4BitNumber",
 			"custom"};
 	public Color[] cols = {
 			new Color(53,205,159),
@@ -37,6 +38,7 @@ public class DisplayNode {
 			new Color(205,249,130),
 			new Color(49,250,52),
 			new Color(45,225,245),
+			new Color(235,235,235),
 			new Color(205,249,130)};
 	
 	public DisplayNode(int x, int y, String id, Font nodeFont) {
@@ -58,6 +60,7 @@ public class DisplayNode {
 		else if (this.id.equals("nand")) this.w = 65;
 		else if (this.id.equals("nor")) this.w = 50;
 		else if (this.id.equals("xnor")) this.w = 55;
+		else if (this.id.equals("4BitNumber")) this.w = 100;
 		else if (this.id.equals("custom")) this.w = 90;
 		else this.w = 100;
 		

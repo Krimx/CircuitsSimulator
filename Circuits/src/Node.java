@@ -24,6 +24,8 @@ public class Node {
 	public int groupYOffset;
 	public int transistors;
 	public int pointProx;
+	public String binary4BitValue;
+	public int value;
 	
 	public String[] ids = {
 			"and",
@@ -35,6 +37,7 @@ public class Node {
 			"xnor",
 			"switch",
 			"light",
+			"4BitNumber",
 			"custom"};
 	public Color[] cols = {
 			new Color(53,205,159),
@@ -46,6 +49,7 @@ public class Node {
 			new Color(205,249,130),
 			null,
 			null,
+			new Color(235,235,235),
 			new Color(205,249,130)};
 	
 	public Node(int x, int y, String id, String[] inputs, String[] outputs, Font nodeFont) {
@@ -59,7 +63,10 @@ public class Node {
 		this.groupXOffset = 0;
 		this.groupYOffset = 0;
 		this.transistors = 0;
-		this.pointProx = 10;
+		this.pointProx = 6;
+		
+		this.binary4BitValue = "0000";
+		this.value = 0;
 
 		if (this.id.equals("and")) {
 			this.transistors = 3;
@@ -142,6 +149,15 @@ public class Node {
 			
 			this.outputs[0] = new Output("output", this.uuid);
 		}
+		else if (this.id.equals("4BitNumber")) {
+			this.inputs = new Input[0];
+			this.outputs = new Output[4];
+
+			this.outputs[0] = new Output("output", this.uuid);
+			this.outputs[1] = new Output("output", this.uuid);
+			this.outputs[2] = new Output("output", this.uuid);
+			this.outputs[3] = new Output("output", this.uuid);
+		}
 		else if (this.id.equals("custom")) {
 			this.inputs = new Input[1];
 			this.outputs = new Output[1];
@@ -173,6 +189,7 @@ public class Node {
 		else if (this.id.equals("nand")) this.w = 65;
 		else if (this.id.equals("nor")) this.w = 50;
 		else if (this.id.equals("xnor")) this.w = 55;
+		else if (this.id.equals("4BitNumber")) this.w = 100;
 		else if (this.id.equals("custom")) this.w = 90;
 		else this.w = 100;
 		
@@ -481,9 +498,17 @@ public class Node {
 		g2d.drawRoundRect(x - (this.w / 2) - camera.getX(), y - (this.h / 2) - camera.getY(), w, h, Math.min(w, h) / Main.nodeCornerArc, Math.min(w, h) / Main.nodeCornerArc);
 		g2d.setStroke(origStroke);
 		
-		g2d.setColor(Color.black);
-		g2d.setFont(nodeFont);
-		g2d.drawString(this.id, this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY());
+		if (!this.id.equals("4BitNumber")) {
+			g2d.setColor(Color.black);
+			g2d.setFont(nodeFont);
+			g2d.drawString(this.id, this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY());
+		}
+		
+		if (this.id.equals("4BitNumber")) {
+			g.setFont(nodeFont);
+			g.setColor(Color.black);
+			g.drawString(String.valueOf(this.value), this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY());
+		}
 		
 		this.pointHovering = false;
 
@@ -560,7 +585,7 @@ public class Node {
 					if (this.outputs[i].state) g2d.setColor(Main.onLineColor);
 					else g2d.setColor(Main.offLineColor);
 					g2d.setStroke(new BasicStroke(Main.connectionLineWidth));
-					g2d.drawLine(con.x1, con.y1, con.x2, con.y2);
+					g2d.drawLine(con.x1 - engine.camera.getX(), con.y1 - engine.camera.getY(), con.x2 - engine.camera.getX(), con.y2 - engine.camera.getY());
 					g2d.setStroke(origStroke);
 				}
 			}
@@ -575,7 +600,40 @@ public class Node {
 			}
 		}
 		
+		
+		if (this.id.equals("4BitNumber")) {
+			if (mouseIsHovering(engine)) {
+				if (engine.keys.LEFTTYPED() || engine.mouse.getScrollDifference() < 0) {
+					if (this.value > 0) this.value--;
+					else this.value = 15;
+					
+					String binaryString = intToBinary(this.value, 4);
+					
+					for (int i = 0; i < 4; i++) {
+						if (binaryString.charAt(i) == '1') this.outputs[i].state = true;
+						if (binaryString.charAt(i) == '0') this.outputs[i].state = false;
+					}
+					
+					sendAllOutputs(nodes, ranUUIDs);
+				}
+				if (engine.keys.RIGHTTYPED() || engine.mouse.getScrollDifference() > 0) {
+					if (this.value < 15) this.value++;
+					else this.value = 0;
+					
+					String binaryString = intToBinary(this.value, 4);
+					
+					for (int i = 0; i < 4; i++) {
+						if (binaryString.charAt(i) == '1') this.outputs[i].state = true;
+						if (binaryString.charAt(i) == '0') this.outputs[i].state = false;
+					}
+					
+					sendLogic(nodes, ranUUIDs);
+				}
+			}
+		}
 	}
+	
+	
 	
 	public boolean mouseIsHovering(Engine engine) {
 		if (engine.mouse.getX() >= this.x - (this.w / 2) - engine.camera.getX() &&
@@ -657,7 +715,7 @@ public class Node {
 				this.outputs[0].state = !((this.inputs[0].state || this.inputs[1].state) && !(this.inputs[0].state && this.inputs[1].state));
 			}
 			
-			sendLogic(nodes, ranUUIDs);
+			sendAllOutputs(nodes, ranUUIDs);
 		}
 	}
 	
@@ -669,6 +727,37 @@ public class Node {
 				searchNodesByUUID(nodes, searchInputsByUUID(nodes, this.outputs[0].connectedUUIDs.get(i)).parentUUID).logic(nodes, ranUUIDs);
 			}
 		}
-		
+	}
+	
+	public void sendAllOutputs(ArrayList<Node> nodes, ArrayList<String> ranUUIDs) {
+		if (this.outputs.length > 0 && !ranUUIDs.contains(this.uuid)) {
+			for (int i = 0; i < this.outputs.length; i++) {
+				for (int ii = 0; ii < this.outputs[i].connectedUUIDs.size(); ii++) {
+					searchInputsByUUID(nodes, this.outputs[i].connectedUUIDs.get(ii)).state = this.outputs[i].state;
+					ranUUIDs.add(this.uuid);
+					searchNodesByUUID(nodes, searchInputsByUUID(nodes, this.outputs[i].connectedUUIDs.get(ii)).parentUUID).logic(nodes, ranUUIDs);
+				}
+			}
+		}
+	}
+	
+	public String intToBinary (int n, int numOfBits) {
+	   String binary = "";
+	   for(int i = 0; i < numOfBits; ++i, n/=2) {
+	      switch (n % 2) {
+	         case 0:
+	            binary = "0" + binary;
+	         break;
+	         case 1:
+	            binary = "1" + binary;
+	         break;
+	      }
+	   }
+
+	   return binary;
+	}
+	
+	public int binaryToInt(String in) {
+		return Integer.parseInt(in, 2);
 	}
 }

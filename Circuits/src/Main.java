@@ -73,6 +73,7 @@ public class Main {
 	public static int nodeOutlineWidth = 3;
 	public static int nodeCornerArc = 3;
 	public static int connectionLineWidth = 3;
+	public static int grabXOffset = 0, grabYOffset = 0;
 	
 	public static ArrayList<String> ranUUIDs = new ArrayList<>();
 	
@@ -132,6 +133,7 @@ public class Main {
 		addDisplayNode("nand", 470);
 		addDisplayNode("nor", 550);
 		addDisplayNode("xnor", 620);
+		addDisplayNode("4BitNumber", 700);
 		
 		try {
 			engine.run();
@@ -174,7 +176,7 @@ public class Main {
 		}
 		
 		//Trackpad panning support area
-		double scrollMultiplier = 1.5;
+		double scrollMultiplier = 2.5;
 		int scrollDifference = (int) (engine.mouse.getScrollDifference() * scrollMultiplier);
 		if (engine.mouse.getIsVerticalScroll()) engine.camera.addY(-scrollDifference);
 		else engine.camera.addX(-scrollDifference);
@@ -274,6 +276,7 @@ public class Main {
 			}
 		}
 		
+		//If holding control and left click node, duplicate node and grab
 		if (engine.keys.K_CONTROL()) {
 			if (engine.mouse.LEFT()) {
 				if (grabbedUUID.equals("") && grabbedNode.equals("")) {
@@ -300,11 +303,17 @@ public class Main {
 						}
 					}
 					if (grabbedUUID.equals("") && grabbedNode.equals("")) {
-						if (node.mouseIsHovering(engine)) grabbedNode = node.uuid;
+						if (node.mouseIsHovering(engine)) {
+							grabbedNode = node.uuid;
+							grabXOffset = (node.x - engine.camera.getX()) - engine.mouse.getX();
+							grabYOffset = (node.y - engine.camera.getY()) - engine.mouse.getY();
+						}
+							
 						grabbedSomething = true;
 					}
 				}
 				
+				//Menu of nodes to grab from at the bottom, detect if leftclicking one and grab one
 				for (DisplayNode node : menuNodes) {
 					if (node.mouseIsHovering(engine) && grabbedNode.equals("")) {
 						nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), node.id, null, null, nodeFont));
@@ -316,8 +325,8 @@ public class Main {
 			
 			if (!grabbedNode.equals("")) { //If already grabbed node, can't grab more (also filter for grabbing input/output)
 				Node grabbed = searchNodesByUUID(grabbedNode);
-				grabbed.x = engine.mouse.getX() + engine.camera.getX();
-				grabbed.y = engine.mouse.getY() + engine.camera.getY();
+				grabbed.x = engine.mouse.getX() + engine.camera.getX() + grabXOffset;
+				grabbed.y = engine.mouse.getY() + engine.camera.getY() + grabYOffset;
 				grabbed.redrawConnections(nodes, engine);
 			}
 			startedLeft = true;

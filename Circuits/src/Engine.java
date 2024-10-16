@@ -46,6 +46,8 @@ class Screen extends JPanel {
 			checkedForRunOutput = true;
 		}
 		
+		Engine.mouse.setScrollDifference(0);
+		
 		repaint();
 	}
 }
@@ -1134,7 +1136,6 @@ public class Engine {
 		}
 		public int getScrollDifference() {
 			int toOut = scrollDifference;
-			scrollDifference = 0;
 			return toOut;
 		}
 		
@@ -1142,6 +1143,7 @@ public class Engine {
 
 		public void setXOffset(int offset) {xOffset = offset;}
 		public void setYOffset(int offset) {yOffset = offset;}
+		public void setScrollDifference(int in) {this.scrollDifference = in;}
 	}
 	
 	public static class Hitbox {

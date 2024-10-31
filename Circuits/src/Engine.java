@@ -224,7 +224,7 @@ public class Engine {
 		public boolean canq = true, canw = true, cane = true, canr = true, cant = true, cany = true, canu = true, cani = true, cano = true, canp = true, cana = true, cans = true, cand = true, canf = true, cang = true, canh = true, canj = true, cank = true, canl = true, canz = true, canx = true, canc = true, canv = true, canb = true, cann = true, canm = true;
 		public boolean can1 = true, can2 = true, can3 = true, can4 = true, can5 = true, can6 = true, can7 = true, can8 = true, can9 = true, can0 = true;
 		
-		public boolean K_CONTROL = false;
+		public boolean K_CONTROL = false, K_ALT = false;
 		@Override
 		public void keyTyped(KeyEvent e) {
 			//int key = e.getKeyCode();
@@ -285,6 +285,9 @@ public class Engine {
 			
 			if (e.isControlDown()) K_CONTROL = true;
 			else K_CONTROL = false;
+			
+			if (e.isAltDown()) K_ALT = true;
+			else K_ALT = false;
 			
 		}
 
@@ -478,8 +481,9 @@ public class Engine {
 				K_0 = false;
 				can0 = true;
 			}
-			
+
 			if (!e.isControlDown()) K_CONTROL = false;
+			if (!e.isAltDown()) K_ALT = false;
 		}
 		
 		//Normal Accessor methods
@@ -531,8 +535,9 @@ public class Engine {
 		public  boolean K8() {return K_8;}
 		public  boolean K9() {return K_9;}
 		public  boolean K0() {return K_0;}
-		
+
 		public boolean K_CONTROL() {return K_CONTROL;}
+		public boolean K_ALT() {return K_ALT;}
 		
 		//Typed Accessor methods
 		public  boolean ESCAPETYPED() {
@@ -1138,6 +1143,7 @@ public class Engine {
 			int toOut = scrollDifference;
 			return toOut;
 		}
+		
 		
 
 

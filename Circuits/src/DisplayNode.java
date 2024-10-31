@@ -27,6 +27,11 @@ public class DisplayNode {
 			"switch",
 			"light",
 			"4BitNumber",
+			"4BitAdder",
+			"4BitDisplay",
+			"decoder",
+			"encoder",
+			"mux",
 			"custom"};
 	public Color[] cols = {
 			new Color(53,205,159),
@@ -39,6 +44,11 @@ public class DisplayNode {
 			new Color(49,250,52),
 			new Color(45,225,245),
 			new Color(235,235,235),
+			new Color(251,255,202),
+			new Color(200,200,200),
+			new Color(251,255,104),
+			new Color(0,0,0),
+			new Color(230,255,0),
 			new Color(205,249,130)};
 	
 	public DisplayNode(int x, int y, String id, Font nodeFont) {
@@ -60,7 +70,11 @@ public class DisplayNode {
 		else if (this.id.equals("nand")) this.w = 65;
 		else if (this.id.equals("nor")) this.w = 50;
 		else if (this.id.equals("xnor")) this.w = 55;
-		else if (this.id.equals("4BitNumber")) this.w = 100;
+		else if (this.id.equals("4BitNumber")) this.w = 120;
+		else if (this.id.equals("4BitAdder")) this.w = 105;
+		else if (this.id.equals("4BitDisplay")) this.w = 115;
+		else if (this.id.equals("decoder")) this.w = 90;
+		else if (this.id.equals("mux")) this.w = 60;
 		else if (this.id.equals("custom")) this.w = 90;
 		else this.w = 100;
 		
@@ -145,21 +159,21 @@ public class DisplayNode {
 		return index;
 	}
 	
-	public void render(Graphics g, Font pointFont, Font nodeFont) {
+	public void render(Graphics g, Font pointFont, Font nodeFont, int displayScroll) {
 		Graphics2D g2d = (Graphics2D) g;
 		Stroke origStroke = g2d.getStroke();
 		
 		g2d.setColor(this.color);
 		
-		g2d.fillRoundRect(x - (this.w / 2), y - (this.h / 2), w, h, Math.min(w, h) / Main.nodeCornerArc, Math.min(w, h) / Main.nodeCornerArc);
+		g2d.fillRoundRect(x - (this.w / 2) - displayScroll, y - (this.h / 2), w, h, Math.min(w, h) / Main.nodeCornerArc, Math.min(w, h) / Main.nodeCornerArc);
 		g2d.setColor(Color.black);
 		g2d.setStroke(new BasicStroke(Main.nodeOutlineWidth));
-		g2d.drawRoundRect(x - (this.w / 2), y - (this.h / 2), w, h, Math.min(w, h) / Main.nodeCornerArc, Math.min(w, h) / Main.nodeCornerArc);
+		g2d.drawRoundRect(x - (this.w / 2) - displayScroll, y - (this.h / 2), w, h, Math.min(w, h) / Main.nodeCornerArc, Math.min(w, h) / Main.nodeCornerArc);
 		g2d.setStroke(origStroke);
 		
 		g2d.setColor(Color.black);
 		g2d.setFont(nodeFont);
-		g2d.drawString(this.id, this.x - (this.w / 2) + 10, this.y + 8);
+		g2d.drawString(this.id, this.x - (this.w / 2) + 10 - displayScroll, this.y + 8);
 	}
 	
 	public void render(Graphics g, Engine engine, Font pointFont, Font nodeFont, Engine.Camera camera, ArrayList<Node> nodes, String grabbedUUID) {
@@ -184,9 +198,9 @@ public class DisplayNode {
 		
 	}
 	
-	public boolean mouseIsHovering(Engine engine) {
-		if (engine.mouse.getX() >= this.x - (this.w / 2) &&
-			engine.mouse.getX() <= this.x + (this.w / 2) &&
+	public boolean mouseIsHovering(Engine engine, int displayScroll) {
+		if (engine.mouse.getX() + displayScroll >= this.x - (this.w / 2) &&
+			engine.mouse.getX() + displayScroll <= this.x + (this.w / 2) &&
 			engine.mouse.getY() >= this.y - (this.h / 2) &&
 			engine.mouse.getY() <= this.y + (this.h / 2))
 		{

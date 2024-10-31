@@ -26,6 +26,8 @@ public class Node {
 	public int pointProx;
 	public String binary4BitValue;
 	public int value;
+	public boolean pausePanning;
+	public int decoderAmount;
 	
 	public String[] ids = {
 			"and",
@@ -38,6 +40,11 @@ public class Node {
 			"switch",
 			"light",
 			"4BitNumber",
+			"4BitAdder",
+			"4BitDisplay",
+			"decoder",
+			"encoder",
+			"mux",
 			"custom"};
 	public Color[] cols = {
 			new Color(53,205,159),
@@ -50,6 +57,11 @@ public class Node {
 			null,
 			null,
 			new Color(235,235,235),
+			new Color(251,255,202),
+			new Color(200,200,200),
+			new Color(251,255,104),
+			new Color(0,0,0),
+			new Color(230,255,0),
 			new Color(205,249,130)};
 	
 	public Node(int x, int y, String id, String[] inputs, String[] outputs, Font nodeFont) {
@@ -64,106 +76,84 @@ public class Node {
 		this.groupYOffset = 0;
 		this.transistors = 0;
 		this.pointProx = 6;
+		this.decoderAmount = 2;
 		
 		this.binary4BitValue = "0000";
 		this.value = 0;
+		this.pausePanning = false;
 
-		if (this.id.equals("and")) {
-			this.transistors = 3;
-			this.inputs = new Input[2];
-			this.outputs = new Output[1];
-
-			this.inputs[0] = new Input("input", this.uuid);
-			this.inputs[1] = new Input("input", this.uuid);
-
-			this.outputs[0] = new Output("output", this.uuid);
-		}
-		else if (this.id.equals("or")) {
-			this.transistors = 3;
-			this.inputs = new Input[2];
-			this.outputs = new Output[1];
-
-			this.inputs[0] = new Input("input", this.uuid);
-			this.inputs[1] = new Input("input", this.uuid);
-
-			this.outputs[0] = new Output("output", this.uuid);
-		}
-		else if (this.id.equals("not")) {
-			this.transistors = 1;
-			this.inputs = new Input[1];
-			this.outputs = new Output[1];
-
-			this.inputs[0] = new Input("input", this.uuid);
-
-			this.outputs[0] = new Output("output", this.uuid);
-		}
-		else if (this.id.equals("switch")) {
-			this.inputs = new Input[0];
-			this.outputs = new Output[1];
-
-			this.outputs[0] = new Output("output", this.uuid);
-		}
-		else if (this.id.equals("light")) {
-			this.inputs = new Input[1];
-			this.outputs = new Output[0];
-
-			this.inputs[0] = new Input("input", this.uuid);
-		}
-		else if (this.id.equals("xor")) {
-			this.transistors = 6;
-			this.inputs = new Input[2];
-			this.outputs = new Output[1];
-
-			this.inputs[0] = new Input("input", this.uuid);
-			this.inputs[1] = new Input("input", this.uuid);
-			
-			this.outputs[0] = new Output("output", this.uuid);
-		}
-		else if (this.id.equals("nand")) {
-			this.transistors = 2;
-			this.inputs = new Input[2];
-			this.outputs = new Output[1];
-
-			this.inputs[0] = new Input("input", this.uuid);
-			this.inputs[1] = new Input("input", this.uuid);
-			
-			this.outputs[0] = new Output("output", this.uuid);
-		}
-		else if (this.id.equals("nor")) {
-			this.transistors = 2;
-			this.inputs = new Input[2];
-			this.outputs = new Output[1];
-
-			this.inputs[0] = new Input("input", this.uuid);
-			this.inputs[1] = new Input("input", this.uuid);
-			
-			this.outputs[0] = new Output("output", this.uuid);
-		}
-		else if (this.id.equals("xnor")) {
-			this.transistors = 16;
-			this.inputs = new Input[2];
-			this.outputs = new Output[1];
-
-			this.inputs[0] = new Input("input", this.uuid);
-			this.inputs[1] = new Input("input", this.uuid);
-			
-			this.outputs[0] = new Output("output", this.uuid);
-		}
+		if (this.id.equals("and")) addInputsAndOutputs(2,1);
+		else if (this.id.equals("or")) addInputsAndOutputs(2,1);
+		else if (this.id.equals("not")) addInputsAndOutputs(1,1);
+		else if (this.id.equals("switch")) addInputsAndOutputs(0,1);
+		else if (this.id.equals("light")) addInputsAndOutputs(1,0);
+		else if (this.id.equals("xor")) addInputsAndOutputs(2,1);
+		else if (this.id.equals("nand")) addInputsAndOutputs(2,1);
+		else if (this.id.equals("nor")) addInputsAndOutputs(2,1);
+		else if (this.id.equals("xnor")) addInputsAndOutputs(2,1);
 		else if (this.id.equals("4BitNumber")) {
 			this.inputs = new Input[0];
 			this.outputs = new Output[4];
-
-			this.outputs[0] = new Output("output", this.uuid);
-			this.outputs[1] = new Output("output", this.uuid);
-			this.outputs[2] = new Output("output", this.uuid);
-			this.outputs[3] = new Output("output", this.uuid);
+			this.outputs[0] = new Output("A1", this.uuid);
+			this.outputs[1] = new Output("A2", this.uuid);
+			this.outputs[2] = new Output("A3", this.uuid);
+			this.outputs[3] = new Output("A4", this.uuid);
+			
+			this.pausePanning = true;
 		}
-		else if (this.id.equals("custom")) {
-			this.inputs = new Input[1];
+		else if (this.id.equals("4BitAdder")) {
+			this.inputs = new Input[9];
+			this.outputs = new Output[5];
+
+			this.inputs[0] = new Input("A1", this.uuid);
+			this.inputs[1] = new Input("A2", this.uuid);
+			this.inputs[2] = new Input("A3", this.uuid);
+			this.inputs[3] = new Input("A4", this.uuid);
+			this.inputs[4] = new Input("B1", this.uuid);
+			this.inputs[5] = new Input("B2", this.uuid);
+			this.inputs[6] = new Input("B3", this.uuid);
+			this.inputs[7] = new Input("B4", this.uuid);
+			this.inputs[8] = new Input("subtract", this.uuid);
+
+			this.outputs[0] = new Output("sum1", this.uuid);
+			this.outputs[1] = new Output("sum2", this.uuid);
+			this.outputs[2] = new Output("sum3", this.uuid);
+			this.outputs[3] = new Output("sum4", this.uuid);
+			this.outputs[4] = new Output("carry_out", this.uuid);
+		}
+		else if (this.id.equals("4BitDisplay")) {
+			this.inputs = new Input[4];
+			this.outputs = new Output[0];
+
+			this.inputs[0] = new Input("A1", this.uuid);
+			this.inputs[1] = new Input("A2", this.uuid);
+			this.inputs[2] = new Input("A3", this.uuid);
+			this.inputs[3] = new Input("A4", this.uuid);
+		}
+		else if (this.id.equals("decoder")) {
+			this.inputs = new Input[2];
+			this.outputs = new Output[4];
+
+			this.inputs[0] = new Input("A0", this.uuid);
+			this.inputs[1] = new Input("A1", this.uuid);
+
+			this.outputs[0] = new Output("B0", this.uuid);
+			this.outputs[1] = new Output("B1", this.uuid);
+			this.outputs[2] = new Output("B2", this.uuid);
+			this.outputs[3] = new Output("B3", this.uuid);
+		}
+		else if (this.id.equals("mux")) {
+			this.inputs = new Input[3];
 			this.outputs = new Output[1];
 
-			this.inputs[0] = new Input("input", this.uuid);
-			this.outputs[0] = new Output("output", this.uuid);
+			this.inputs[0] = new Input("A0", this.uuid);
+			this.inputs[1] = new Input("A1", this.uuid);
+			this.inputs[2] = new Input("Control_0", this.uuid);
+
+			this.outputs[0] = new Output("B0", this.uuid);
+		}
+		else if (this.id.equals("custom")) {
+			addInputsAndOutputs(1,1);
 		}
 		else {
 			this.inputs = new Input[inputs.length];
@@ -190,10 +180,30 @@ public class Node {
 		else if (this.id.equals("nor")) this.w = 50;
 		else if (this.id.equals("xnor")) this.w = 55;
 		else if (this.id.equals("4BitNumber")) this.w = 100;
+		else if (this.id.equals("4BitAdder")) this.w = 115;
+		else if (this.id.equals("4BitDisplay")) this.w = 115;
+		else if (this.id.equals("decoder")) this.w = 125;
+		else if (this.id.equals("mux")) this.w = 60;
 		else if (this.id.equals("custom")) this.w = 90;
 		else this.w = 100;
 		
-		this.color = cols[indexOf(this.id, ids)];
+		this.color = cols[Methods.indexOf(this.id, ids)];
+	}
+	
+	public void addInputsAndOutputs(int ins, int outs) {
+		this.inputs = new Input[ins];
+		this.outputs = new Output[outs];
+		if (this.inputs.length > 0) {
+			for (int i = 0; i < this.inputs.length; i++) {
+				this.inputs[i] = new Input("input", this.uuid);
+			}
+		}
+		if (this.outputs.length > 0) {
+			for (int i = 0; i < this.outputs.length; i++) {
+				this.outputs[i] = new Output("output", this.uuid);
+			}
+		}
+		
 	}
 
 	public static class Input {
@@ -226,38 +236,14 @@ public class Node {
 			this.state = false;
 		}
 		
-		public Node searchNodesByUUID(ArrayList<Node> nodes, String toCheck) {
-			Node toOut = null;
-			for (int i = 0; i < nodes.size(); i++) {
-				if (nodes.get(i).uuid.equals(toCheck)) toOut = nodes.get(i);
-			}
-			return toOut;
-		}
 		
-		public int searchOutputIndexByUUID(Node node, String toUUID) {
-			int index = -1;
-			
-			for (int i = 0; i < node.outputs.length; i++) {
-				if (toUUID.equals(node.outputs[i].uuid)) index = i;
-			}
-			
-			return index;
-		}
 		
-		public int searchInputIndexByUUID(Node node, String toUUID) {
-			int index = -1;
-			
-			for (int i = 0; i < node.inputs.length; i++) {
-				if (toUUID.equals(node.inputs[i].uuid)) index = i;
-			}
-			
-			return index;
-		}
+		
 		
 		public void redrawConnectionLines(ArrayList<Node> nodes, Engine engine) {
-			Node parent = searchNodesByUUID(nodes, this.parentUUID);
+			Node parent = Methods.searchNodesByUUID(nodes, this.parentUUID);
 			
-			int toY = parent.y + (parent.yOffset + (parent.yOffset / 2)) + (searchOutputIndexByUUID(parent, this.uuid) * parent.yGap) - (parent.h / 2) - engine.camera.getY();
+			int toY = parent.y + (parent.yOffset + (parent.yOffset / 2)) + (Methods.searchOutputIndexByUUID(parent, this.uuid) * parent.yGap) - (parent.h / 2) - engine.camera.getY();
 			int toX = parent.x + (parent.w / 2) - engine.camera.getX();
 			
 			try {
@@ -270,7 +256,7 @@ public class Node {
 								int endX = nodes.get(j).x - (nodes.get(j).w / 2) - engine.camera.getX();
 								int endY = nodes.get(j).y + (nodes.get(j).yOffset + (nodes.get(j).yOffset / 2)) + (k * nodes.get(j).yGap) - (nodes.get(j).h / 2) - engine.camera.getY();
 								
-								this.connections.set(l, new Line(toX, toY, endX, endY));
+								this.connections.set(l, new Line(toX + engine.camera.getX(), toY + engine.camera.getY(), endX + engine.camera.getX(), endY + engine.camera.getY()));
 								
 								//Get out of the loops and move on with life
 								break;
@@ -284,16 +270,16 @@ public class Node {
 		}
 		
 		public void createConnection(String toUUID, Engine engine, ArrayList<Node> nodes, ArrayList<String> ranUUIDs) {
-			Node parent = searchNodesByUUID(nodes, this.parentUUID);
+			Node parent = Methods.searchNodesByUUID(nodes, this.parentUUID);
 			
-			int toY = parent.y + (parent.yOffset + (parent.yOffset / 2)) + (searchOutputIndexByUUID(parent, this.uuid) * parent.yGap) - (parent.h / 2) - engine.camera.getY();
+			int toY = parent.y + (parent.yOffset + (parent.yOffset / 2)) + (Methods.searchOutputIndexByUUID(parent, this.uuid) * parent.yGap) - (parent.h / 2) - engine.camera.getY();
 			int toX = parent.x + (parent.w / 2) - engine.camera.getX();
 			
 			try {
 				for (int j = 0; j < nodes.size(); j++) { //Iterate over nodes
 					for (int k = 0; k < nodes.get(j).inputs.length; k++) { //Iterate over inputs in nodes
 						if (nodes.get(j).inputs[k].uuid.equals(toUUID)) { //Check for matching uuid and connectedUUID
-							Node.Output connectedOutput = parent.searchOutputsByUUID(nodes, nodes.get(j).inputs[k].connectedUUID);
+							Node.Output connectedOutput = Methods.searchOutputsByUUID(nodes, nodes.get(j).inputs[k].connectedUUID);
 							
 							if (connectedOutput != null) {
 								connectedOutput.severConnection(nodes, nodes.get(j).inputs[k].uuid);
@@ -303,9 +289,11 @@ public class Node {
 							int endX = nodes.get(j).x - (nodes.get(j).w / 2) - engine.camera.getX();
 							int endY = nodes.get(j).y + (nodes.get(j).yOffset + (nodes.get(j).yOffset / 2)) + (k * nodes.get(j).yGap) - (nodes.get(j).h / 2) - engine.camera.getY();
 							
-							this.connections.add(new Line(toX, toY, endX, endY));
+							this.connections.add(new Line(toX + engine.camera.getX(), toY + engine.camera.getY(), endX + engine.camera.getX(), endY + engine.camera.getY()));
 							this.connectedUUIDs.add(toUUID);
 							nodes.get(j).inputs[k].connectedUUID = this.uuid;
+							
+							Methods.searchNodesByUUID(nodes, this.parentUUID).sendAllOutputs(nodes, ranUUIDs);
 							
 							//Get out of the loops and move on with life
 							break;
@@ -323,21 +311,21 @@ public class Node {
 		
 		public void severConnection(ArrayList<Node> nodes, String uuid) {
 			int connectionIndex = this.connectedUUIDs.indexOf(uuid);
-			nodes.get(0).searchInputsByUUID(nodes, connectedUUIDs.get(connectionIndex)).connectedUUID = "";
+			Methods.searchInputsByUUID(nodes, connectedUUIDs.get(connectionIndex)).connectedUUID = ""; //Add a method to search within a single node instead of looking up every single node
 			this.connectedUUIDs.remove(connectionIndex);
 			this.connections.remove(connectionIndex);
 			
 		}
 		
 		public void severConnection(ArrayList<Node> nodes, int connectionIndex) {
-			nodes.get(0).searchInputsByUUID(nodes, connectedUUIDs.get(connectionIndex)).connectedUUID = "";
+			Methods.searchInputsByUUID(nodes, connectedUUIDs.get(connectionIndex)).connectedUUID = "";
 			this.connectedUUIDs.remove(connectionIndex);
 			this.connections.remove(connectionIndex);
 		}
 		
 		public void severAllConnections(ArrayList<Node> nodes) {
 			for (int i = 0; i < this.connectedUUIDs.size(); i++) {
-				nodes.get(0).searchInputsByUUID(nodes, this.connectedUUIDs.get(i)).connectedUUID = "";
+				Methods.searchInputsByUUID(nodes, this.connectedUUIDs.get(i)).connectedUUID = "";
 			}
 			this.connectedUUIDs.clear();
 			this.connections.clear();
@@ -352,53 +340,6 @@ public class Node {
 		}
 		
 		return toOut;
-	}
-	
-	public Output searchOutputsByUUID(ArrayList<Node> nodes, String toCheck) {
-		Output toOut = null;
-		
-		for (int i = 0; i < nodes.size(); i++) {
-			for (int j = 0; j < nodes.get(i).outputs.length; j++) {
-				if (nodes.get(i).outputs[j].uuid.equals(toCheck)) {
-					toOut = nodes.get(i).outputs[j];
-				}
-			}
-		}
-		
-		return toOut;
-	}
-	
-	public Input searchInputsByUUID(ArrayList<Node> nodes, String toCheck) {
-		Input toOut = null;
-		
-		for (int i = 0; i < nodes.size(); i++) {
-			for (int j = 0; j < nodes.get(i).inputs.length; j++) {
-				if (nodes.get(i).inputs[j].uuid.equals(toCheck)) {
-					toOut = nodes.get(i).inputs[j];
-				}
-			}
-		}
-		
-		return toOut;
-	}
-	
-	public Node searchNodesByUUID(ArrayList<Node> nodes, String toCheck) {
-		Node toOut = null;
-		for (int i = 0; i < nodes.size(); i++) {
-			if (nodes.get(i).uuid.equals(toCheck)) toOut = nodes.get(i);
-		}
-		return toOut;
-	}
-	
-	public int indexOf(String val, String[] array) {
-		int index = -1;
-		for (int i = 0; i < array.length; i++) {
-			if (array[i].equals(val)) {
-				index = i;
-				break;
-			}
-		}
-		return index;
 	}
 	
 	public void recreateConnections(ArrayList<Node> nodes, Engine engine, ArrayList<String> ranUUIDs) {
@@ -476,7 +417,8 @@ public class Node {
 		}
 	}
 	
-	public void render(Graphics g, Engine engine, Font pointFont, Font nodeFont, Engine.Camera camera, ArrayList<Node> nodes, String grabbedUUID) {
+	public boolean render(Graphics g, Engine engine, Font pointFont, Font nodeFont, Engine.Camera camera, ArrayList<Node> nodes, String grabbedUUID, ArrayList<String> selectedNodes) {
+		boolean inScreen = false;
 		Graphics2D g2d = (Graphics2D) g;
 		Stroke origStroke = g2d.getStroke();
 		
@@ -489,25 +431,46 @@ public class Node {
 			if (this.inputs[0].state) g2d.setColor(new Color(45,225,245));
 			else g2d.setColor(new Color(16,34,68));
 		}
+		
+		//Decoders have special case where height needs to be updated in real time
+		if (this.id.equals("decoder")) {
+			this.h = (Math.max(this.inputs.length, this.outputs.length) * yGap) + yOffset;
+		}
+		
+		int centerX = x - camera.getX();
+		int centerY = y - camera.getY();
+		
 		//g2d.fillRect(x - (this.w / 2) - camera.getX(), y - (this.h / 2) - camera.getY(), w, h);
-		g2d.fillRoundRect(x - (this.w / 2) - camera.getX(), y - (this.h / 2) - camera.getY(), w, h, Math.min(w, h) / Main.nodeCornerArc, Math.min(w, h) / Main.nodeCornerArc);
+		g2d.fillRoundRect(centerX - (this.w / 2), centerY - (this.h / 2), w, h, Math.min(w, h) / Main.nodeCornerArc, Math.min(w, h) / Main.nodeCornerArc);
 		g2d.setColor(Color.black);
 		if (this.selected) g2d.setColor(Color.yellow);
 		//g2d.drawRect(x - (this.w / 2) - camera.getX(), y - (this.h / 2) - camera.getY(), w, h);
 		g2d.setStroke(new BasicStroke(Main.nodeOutlineWidth));
-		g2d.drawRoundRect(x - (this.w / 2) - camera.getX(), y - (this.h / 2) - camera.getY(), w, h, Math.min(w, h) / Main.nodeCornerArc, Math.min(w, h) / Main.nodeCornerArc);
+		if (selectedNodes.contains(this.uuid)) g2d.setColor(Color.yellow);
+		g2d.drawRoundRect(centerX - (this.w / 2), centerY - (this.h / 2), w, h, Math.min(w, h) / Main.nodeCornerArc, Math.min(w, h) / Main.nodeCornerArc);
 		g2d.setStroke(origStroke);
 		
-		if (!this.id.equals("4BitNumber")) {
-			g2d.setColor(Color.black);
-			g2d.setFont(nodeFont);
-			g2d.drawString(this.id, this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY());
-		}
+		
 		
 		if (this.id.equals("4BitNumber")) {
 			g.setFont(nodeFont);
 			g.setColor(Color.black);
 			g.drawString(String.valueOf(this.value), this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY());
+		}
+		else if (this.id.equals("4BitDisplay")) {
+			g.setFont(nodeFont);
+			g.setColor(Color.black);
+			g.drawString(String.valueOf(this.value), this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY());
+		}
+		else if (this.id.equals("decoder")) {
+			g.setFont(nodeFont);
+			g.setColor(Color.black);
+			g.drawString(String.valueOf(this.inputs.length) + "-" + String.valueOf(this.outputs.length) + " decoder", this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY());
+		}
+		else {
+			g2d.setColor(Color.black);
+			g2d.setFont(nodeFont);
+			g2d.drawString(this.id, this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY());
 		}
 		
 		this.pointHovering = false;
@@ -520,7 +483,7 @@ public class Node {
 			this.inputs[i].trueX = toX;
 			this.inputs[i].trueY = toY;
 			
-			boolean mouseHover = inProx(toX, toY, rad, engine.mouse.getX(), engine.mouse.getY(), this.pointProx);
+			boolean mouseHover = Methods.inProx(toX, toY, rad, engine.mouse.getX(), engine.mouse.getY(), this.pointProx);
 			
 			if (mouseHover) {
 				g2d.setColor(new Color(203, 200, 183));
@@ -551,7 +514,7 @@ public class Node {
 			this.outputs[i].trueX = toX;
 			this.outputs[i].trueY = toY;
 			
-			boolean mouseHover = inProx(toX, toY, rad, engine.mouse.getX(), engine.mouse.getY(), this.pointProx);
+			boolean mouseHover = Methods.inProx(toX, toY, rad, engine.mouse.getX(), engine.mouse.getY(), this.pointProx);
 			
 			if (mouseHover) {
 				g2d.setColor(new Color(203, 200, 183));
@@ -572,6 +535,10 @@ public class Node {
 				g2d.drawString(this.outputs[i].id, toX + 5, toY - 8);
 			}
 		}
+		
+		if (centerX >= 0 && centerX <= engine.scrWidth && centerY >= 0 && centerY <= engine.scrHeight) inScreen = true;
+		
+		return inScreen;
 	}
 	
 	public void drawConnectionLines(Graphics g, Engine engine, Font pointFont, Font nodeFont, Engine.Camera camera, ArrayList<Node> nodes, String grabbedUUID) {
@@ -592,7 +559,7 @@ public class Node {
 		}
 	}
 	
-	public void update(Engine engine, ArrayList<Node> nodes, ArrayList<String> ranUUIDs) {
+	public void update(Engine engine, ArrayList<Node> nodes, ArrayList<String> ranUUIDs, String hoveringID) {
 		if (this.id.equals("switch")) {
 			if (mouseIsHovering(engine) && engine.keys.SPACETYPED()) {
 				this.outputs[0].state = !this.outputs[0].state;
@@ -600,40 +567,125 @@ public class Node {
 			}
 		}
 		
+		if (this.pausePanning && mouseIsHovering(engine)) {
+			hoveringID = this.id;
+		}
+		
 		
 		if (this.id.equals("4BitNumber")) {
 			if (mouseIsHovering(engine)) {
+				String binaryString = "";
 				if (engine.keys.LEFTTYPED() || engine.mouse.getScrollDifference() < 0) {
 					if (this.value > 0) this.value--;
 					else this.value = 15;
 					
-					String binaryString = intToBinary(this.value, 4);
+					binaryString = Methods.intToBinary(this.value, 4);
 					
-					for (int i = 0; i < 4; i++) {
-						if (binaryString.charAt(i) == '1') this.outputs[i].state = true;
-						if (binaryString.charAt(i) == '0') this.outputs[i].state = false;
-					}
 					
-					sendAllOutputs(nodes, ranUUIDs);
 				}
 				if (engine.keys.RIGHTTYPED() || engine.mouse.getScrollDifference() > 0) {
 					if (this.value < 15) this.value++;
 					else this.value = 0;
 					
-					String binaryString = intToBinary(this.value, 4);
-					
+					binaryString = Methods.intToBinary(this.value, 4);
+				}
+				
+				if (binaryString.length() == 4) {
 					for (int i = 0; i < 4; i++) {
-						if (binaryString.charAt(i) == '1') this.outputs[i].state = true;
-						if (binaryString.charAt(i) == '0') this.outputs[i].state = false;
+						this.outputs[i].state = (binaryString.charAt(i) == '1') ? true : false;
+					}
+				}
+			}
+			sendAllOutputs(nodes, ranUUIDs);
+		}
+		
+		if (this.id.equals("decoder")) {
+			if (mouseIsHovering(engine)) {
+				//If press left or right arrow, increase or decrease internal value keeping track of amount of inputs
+				if (engine.keys.LEFTTYPED()) {
+					if (this.decoderAmount > 1) this.decoderAmount--;
+				}
+				if (engine.keys.RIGHTTYPED()) {
+					if (this.decoderAmount < 4) this.decoderAmount++;
+				}
+			}
+			
+			//If amount of inputs does not match internal value, modify inputs and outputs array
+			if (this.inputs.length < this.decoderAmount) {
+				//Create new input array with proper length
+				Input[] newInputs = new Input[this.decoderAmount];
+				//Add elements from current input array
+				for (int i = 0; i < this.inputs.length; i++) {
+					newInputs[i] = this.inputs[i];
+				}
+				//Add new inputs
+				for (int i = this.inputs.length; i < newInputs.length; i++) {
+					newInputs[i] = new Input("Input", this.uuid);
+				}
+				//Assign new array to current array
+				this.inputs = newInputs;
+				
+				//Create new outputs array using 2^decoderAmount for length
+				Output[] newOutputs = new Output[(int) Math.pow(2, decoderAmount)];
+				//Add elements from current output array
+				for (int i = 0; i < this.outputs.length; i++) {
+					newOutputs[i] = this.outputs[i];
+				}
+				//Add new outputs
+				for (int i = this.outputs.length; i < newOutputs.length; i++) {
+					newOutputs[i] = new Output("Output", this.uuid);
+				}
+				this.outputs = newOutputs;
+			}
+			
+			//Case where decreasing amount of inputs and outputs is special because we need to sever any potential connections to other nodes
+			if (this.inputs.length > this.decoderAmount) {
+				//Create new input and output arrays using the needed lengths and copying over the needed inputs and outputs
+				Input[] newInputs = new Input[decoderAmount];
+				Output[] newOutputs = new Output[(int) Math.pow(2, decoderAmount)];
+				
+				for (int i = 0; i < newInputs.length; i++) {
+					newInputs[i] = this.inputs[i];
+				}
+				for (int i = 0; i < newOutputs.length; i++) {
+					newOutputs[i] = this.outputs[i];
+				}
+				
+				//Before we assign our new arrays to the current arrays, we need to sever the connections
+				//Im going to keep track of the uuids that are going to be removed in ArrayLists that we can look through
+				//Then I'm going to iterate over the inputs and outputs to see if the connectedUUIDs are in the ArrayLists
+				ArrayList<String> inputsToBeRemoved = new ArrayList<>();
+				ArrayList<String> outputsToBeRemoved = new ArrayList<>();
+				
+				for (int i = newInputs.length; i < this.inputs.length; i++) {
+					inputsToBeRemoved.add(this.inputs[i].uuid);
+				}
+				for (int i = newOutputs.length; i < this.outputs.length; i++) {
+					outputsToBeRemoved.add(this.outputs[i].uuid);
+				}
+				
+				for (int i = 0; i < nodes.size(); i++) {
+					for (int ii = 0; ii < nodes.get(i).inputs.length; ii++) {
+						if (outputsToBeRemoved.contains(nodes.get(i).inputs[ii].connectedUUID)) {
+							nodes.get(i).inputs[ii].connectedUUID = "";
+						}
 					}
 					
-					sendLogic(nodes, ranUUIDs);
+					for (int ii = 0; ii < nodes.get(i).outputs.length; ii++) {
+						for (int iii = 0; iii < nodes.get(i).outputs[ii].connectedUUIDs.size(); iii++) {
+							if (inputsToBeRemoved.contains(nodes.get(i).outputs[ii].connectedUUIDs.get(iii))) {
+								nodes.get(i).outputs[ii].severConnection(nodes, iii);
+							}
+						}
+					}
 				}
+				
+				//Now we can assign the new input and output arrays
+				this.inputs = newInputs;
+				this.outputs = newOutputs;
 			}
 		}
 	}
-	
-	
 	
 	public boolean mouseIsHovering(Engine engine) {
 		if (engine.mouse.getX() >= this.x - (this.w / 2) - engine.camera.getX() &&
@@ -646,33 +698,9 @@ public class Node {
 		return false;
 	}
 	
-	public boolean inRad(int x, int y, int rad, int checkX, int checkY) {
-		boolean in = false;
-		
-		if (checkX >= x - rad && checkX <= x + rad && checkY >= y - rad && checkY <= y + rad) in = true;
-		
-		return in;
-	}
-	
-	public boolean inProx(int x, int y, int rad, int checkX, int checkY, int prox) {
-		boolean in = false;
-		
-		if (checkX >= x - rad - prox && checkX <= x + rad + prox && checkY >= y - rad - prox && checkY <= y + rad + prox) in = true;
-		
-		return in;
-	}
-	
-	public Node searchByUUID(ArrayList<Node> nodes, String toCheck) {
-		Node toOut = null;
-		for (int i = 0; i < nodes.size(); i++) {
-			if (nodes.get(i).uuid.equals(toCheck)) toOut = nodes.get(i);
-		}
-		return toOut;
-	}
-	
 	public void prepareForRemoval(ArrayList<Node> nodes) {
 		for (int i = 0; i < this.inputs.length; i++) {
-			Output toCut = searchOutputsByUUID(nodes, this.inputs[i].connectedUUID);
+			Output toCut = Methods.searchOutputsByUUID(nodes, this.inputs[i].connectedUUID);
 			if (toCut != null) toCut.severConnection(nodes, inputs[i].uuid);
 		}
 		
@@ -692,6 +720,22 @@ public class Node {
 	}
 
 	public void logic(ArrayList<Node> nodes, ArrayList<String> ranUUIDs) {
+		
+		/*
+		 * Revision to logic and propagation:
+		 * 
+		 * Start at switches
+		 * 	These are always going to be the start of the circuit
+		 * Do a "sendAllOutput" for the switches' outputs
+		 * 	Do not reject uuids that were used later on
+		 * 
+		 * When a connection is made, have the output that leads to the input send a propagation
+		 * Consider how looping connections should be handled
+		 * 	Is it possible to handle every connection asyncronously?
+		 * 		Consider: CompletableFuture (open a new "thread" for each send then close the current thread for the output and move on)
+		 * 			May still have an issue with looping considering how we may end up with multiple threads doing the same thing
+		 * 				Find a way to figure out what connections are already being handled by a new thread and avoid starting something new with them
+		 */
 		if (!ranUUIDs.contains(this.uuid)) {
 			if (this.id.equals("and")) {
 				this.outputs[0].state = (this.inputs[0].state && this.inputs[1].state);
@@ -703,7 +747,7 @@ public class Node {
 				this.outputs[0].state = !this.inputs[0].state;
 			}
 			if (this.id.equals("xor")) {
-				this.outputs[0].state = (this.inputs[0].state || this.inputs[1].state) && !(this.inputs[0].state && this.inputs[1].state);
+				this.outputs[0].state = this.inputs[0].state ^ this.inputs[1].state;
 			}
 			if (this.id.equals("nand")) {
 				this.outputs[0].state = !(this.inputs[0].state && this.inputs[1].state);
@@ -712,7 +756,51 @@ public class Node {
 				this.outputs[0].state = !(this.inputs[0].state || this.inputs[1].state);
 			}
 			if (this.id.equals("xnor")) {
-				this.outputs[0].state = !((this.inputs[0].state || this.inputs[1].state) && !(this.inputs[0].state && this.inputs[1].state));
+				this.outputs[0].state = !(this.inputs[0].state ^ this.inputs[1].state);
+			}
+			if (this.id.equals("4BitAdder")) {
+				int a = Methods.bits4ToInt(inputs[0].state, inputs[1].state, inputs[2].state, inputs[3].state);
+				int b = Methods.bits4ToInt(inputs[4].state, inputs[5].state, inputs[6].state, inputs[7].state);
+				int sum = 0;
+				int carry = 0;
+				
+				sum = (inputs[8].state) ? a - b : a + b;
+				
+				if (sum > 15) {
+					carry = 1;
+					sum -= 15;
+				}
+				
+				String sumBinary = Methods.intToBinary(sum, 4);
+				
+				for (int i = 0; i < 4; i++) {
+					outputs[i].state = (sumBinary.charAt(i) == '1') ? true : false;
+				}
+				outputs[4].state = (carry == 0) ? false : true;
+			}
+			if (this.id.equals("4BitDisplay")) {
+				String bits = "";
+				for (int i = 0; i < 4; i++) {
+					if (this.inputs[i].state) bits += "1";
+					else bits += "0";
+				}
+				
+				this.value = Methods.binaryToInt(bits);
+			}
+			if (this.id.equals("decoder")) {
+				int input = 0;
+				
+				if (this.decoderAmount == 1) input = (this.inputs[0].state) ? 1 : 0;
+				if (this.decoderAmount == 2) input = Methods.bits2ToInt(this.inputs[0].state, this.inputs[1].state);
+				if (this.decoderAmount == 3) input = Methods.bits3ToInt(this.inputs[0].state, this.inputs[1].state, this.inputs[2].state);
+				if (this.decoderAmount == 4) input = Methods.bits4ToInt(this.inputs[0].state, this.inputs[1].state, this.inputs[2].state, this.inputs[3].state);
+				
+				for (int i = 0; i < this.outputs.length; i++) {
+					this.outputs[i].state = (i == input) ? true : false;
+				}
+			}
+			if (this.id.equals("mux")) {
+				this.outputs[0].state = this.inputs[this.inputs[2].state ? 1: 0].state;
 			}
 			
 			sendAllOutputs(nodes, ranUUIDs);
@@ -720,44 +808,31 @@ public class Node {
 	}
 	
 	public void sendLogic(ArrayList<Node> nodes, ArrayList<String> ranUUIDs) {
-		if (this.outputs.length > 0 && !ranUUIDs.contains(this.uuid)) {
+		if (this.outputs.length > 0) {
 			for (int i = 0; i < this.outputs[0].connectedUUIDs.size(); i++) {
-				if (this.outputs.length > 0) searchInputsByUUID(nodes, this.outputs[0].connectedUUIDs.get(i)).state = this.outputs[0].state;
+				if (this.outputs.length > 0) Methods.searchInputsByUUID(nodes, this.outputs[0].connectedUUIDs.get(i)).state = this.outputs[0].state;
 				ranUUIDs.add(this.uuid);
-				searchNodesByUUID(nodes, searchInputsByUUID(nodes, this.outputs[0].connectedUUIDs.get(i)).parentUUID).logic(nodes, ranUUIDs);
+				Methods.searchNodesByUUID(nodes, Methods.searchInputsByUUID(nodes, this.outputs[0].connectedUUIDs.get(i)).parentUUID).logic(nodes, ranUUIDs);
 			}
 		}
 	}
 	
 	public void sendAllOutputs(ArrayList<Node> nodes, ArrayList<String> ranUUIDs) {
-		if (this.outputs.length > 0 && !ranUUIDs.contains(this.uuid)) {
+		if (this.outputs.length > 0) {
 			for (int i = 0; i < this.outputs.length; i++) {
 				for (int ii = 0; ii < this.outputs[i].connectedUUIDs.size(); ii++) {
-					searchInputsByUUID(nodes, this.outputs[i].connectedUUIDs.get(ii)).state = this.outputs[i].state;
+					Methods.searchInputsByUUID(nodes, this.outputs[i].connectedUUIDs.get(ii)).state = this.outputs[i].state;
 					ranUUIDs.add(this.uuid);
-					searchNodesByUUID(nodes, searchInputsByUUID(nodes, this.outputs[i].connectedUUIDs.get(ii)).parentUUID).logic(nodes, ranUUIDs);
+					Methods.searchNodesByUUID(nodes, Methods.searchInputsByUUID(nodes, this.outputs[i].connectedUUIDs.get(ii)).parentUUID).logic(nodes, ranUUIDs);
 				}
 			}
 		}
 	}
 	
-	public String intToBinary (int n, int numOfBits) {
-	   String binary = "";
-	   for(int i = 0; i < numOfBits; ++i, n/=2) {
-	      switch (n % 2) {
-	         case 0:
-	            binary = "0" + binary;
-	         break;
-	         case 1:
-	            binary = "1" + binary;
-	         break;
-	      }
-	   }
-
-	   return binary;
-	}
 	
-	public int binaryToInt(String in) {
-		return Integer.parseInt(in, 2);
-	}
+	
+	
+	
+	//Credit to GeeksForGeeks
+	
 }

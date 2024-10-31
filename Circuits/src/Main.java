@@ -54,6 +54,7 @@ public class Main {
 	
 	public static boolean startedRightClick = false, startedLeftClick = false;
 	public static String grabbedUUID = "", grabbedNode = "";
+	public static String hoveringID = "";
 	
 	//A line drawn by the cursor when holding right-click, used to break connections between inputs and outputs
 	public static Line severLine = new Line(-1,-1,-1,-1);
@@ -87,6 +88,10 @@ public class Main {
 	
 	public static int[] selectBox = {-9999,-9999,-9999,-9999};
 	public static ArrayList<String> selectedNodes = new ArrayList<>();
+	
+	public static int displayScroll = 0, panAmount = 5;
+	public static double scrollMultiplier = 3.5, panMultiplier = 1;
+	public static int cameraVX = 0, cameraVY = 0;
 	
 	public static void main(String[] args) {
 		try {
@@ -125,15 +130,19 @@ public class Main {
 		engine.frame.setVisible(true);
 
 		addDisplayNode("switch", 50);
-		addDisplayNode("light", 130);
-		addDisplayNode("and", 200);
-		addDisplayNode("or", 260);
-		addDisplayNode("not", 320);
-		addDisplayNode("xor", 390);
-		addDisplayNode("nand", 470);
-		addDisplayNode("nor", 550);
-		addDisplayNode("xnor", 620);
-		addDisplayNode("4BitNumber", 700);
+		addDisplayNode("light", 120);
+		addDisplayNode("and", 180);
+		addDisplayNode("or", 230);
+		addDisplayNode("not", 275);
+		addDisplayNode("xor", 330);
+		addDisplayNode("nand", 395);
+		addDisplayNode("nor", 460);
+		addDisplayNode("xnor", 520);
+		addDisplayNode("4BitNumber", 615);
+		addDisplayNode("4BitDisplay", 740);
+		addDisplayNode("4BitAdder", 855);
+		addDisplayNode("decoder", 960);
+		addDisplayNode("mux", 1040);
 		
 		try {
 			engine.run();
@@ -154,32 +163,79 @@ public class Main {
 			nodes.get(i).drawConnectionLines(g, engine, pointFont, nodeFont, engine.camera, nodes, grabbedUUID);
 		}
 		
+		boolean aNodeIsOnScreen = false;
+		
 		for (int i = 0; i < nodes.size(); i++) {
-			nodes.get(i).render(g, engine, pointFont, nodeFont, engine.camera, nodes, grabbedUUID);
+			if (nodes.get(i).render(g, engine, pointFont, nodeFont, engine.camera, nodes, grabbedUUID, selectedNodes)) aNodeIsOnScreen = true;
 			if (nodes.get(i).mouseIsHovering(engine)) {
 				hovering = true;
-				if (engine.keys.LSHIFT()) {
+				if (engine.keys.K_CONTROL()) {
 					g.drawImage(trashCan, nodes.get(i).x + (nodes.get(i).w / 2) - 5 - engine.camera.getX(), nodes.get(i).y - (nodes.get(i).h / 2) - 15 - engine.camera.getY(), 30, 30, null);
 				}
 			}
 		}
 		
-		//If holding middle mouse button, drag camera around with mouse movement
-		if (engine.mouse.MIDDLE()) {
-			int[] delta = engine.mouse.getDelta();
-			engine.camera.addX(-delta[0]);
-			engine.camera.addY(-delta[1]);
+		if (!aNodeIsOnScreen && nodes.size() != 0) {
+			g.setColor(Color.white);
+			int nodePointX = nodes.get(0).x - engine.camera.getX();
+			int nodePointY = nodes.get(0).y - engine.camera.getY();
 			
-			for (int i = 0; i < nodes.size(); i++) {
-				nodes.get(i).redrawConnections(nodes, engine);
-			}
+			g.drawLine(engine.mouse.getX(), engine.mouse.getY(), nodePointX, nodePointY);
 		}
 		
-		//Trackpad panning support area
-		double scrollMultiplier = 2.5;
-		int scrollDifference = (int) (engine.mouse.getScrollDifference() * scrollMultiplier);
-		if (engine.mouse.getIsVerticalScroll()) engine.camera.addY(-scrollDifference);
-		else engine.camera.addX(-scrollDifference);
+		boolean isHoveringOverPauser = false;
+		
+		for (int i = 0; i < nodes.size(); i++) {
+			if (nodes.get(i).mouseIsHovering(engine) && nodes.get(i).pausePanning) isHoveringOverPauser = true;
+		}
+		
+		if (!isHoveringOverPauser) {
+			//If holding middle mouse button, drag camera around with mouse movement
+			if (engine.mouse.MIDDLE()) {
+				int[] delta = engine.mouse.getDelta();
+				engine.camera.addX(-delta[0]);
+				engine.camera.addY(-delta[1]);
+				
+				for (int i = 0; i < nodes.size(); i++) {
+					nodes.get(i).redrawConnections(nodes, engine);
+				}
+			}
+			
+			//Trackpad panning support area
+			int scrollDifference = (int) (engine.mouse.getScrollDifference() * scrollMultiplier);
+			if (engine.mouse.getY() >= engine.scrHeight - 100) {
+				displayScroll -= engine.mouse.getScrollDifference() * scrollMultiplier;
+			}
+			else {
+				if (engine.mouse.getIsVerticalScroll()) engine.camera.addY(-scrollDifference);
+				else engine.camera.addX(-scrollDifference);
+			}
+			
+			/* Probably nt as good, kinda finicky. Wouldn't mind coming back to it to make it better
+			//Better trackpad support???
+			int delta = engine.mouse.getScrollDifference();
+			if (engine.mouse.getScrollAmount() != 0) {
+				if (engine.mouse.getIsVerticalScroll()) {
+					if (Math.pow(cameraVY, delta) < 0) cameraVY = delta;
+					else cameraVY += delta;
+				}
+				else {
+					if (Math.pow(cameraVX, delta) < 0) cameraVX = delta;
+					else cameraVX += delta;
+				}
+			}
+			
+			System.out.println(cameraVX + ", " + cameraVY);
+			engine.camera.addY((int) (-cameraVY *  panMultiplier));
+			engine.camera.addX((int) (-cameraVX *  panMultiplier));
+			
+			if (cameraVY < 0) cameraVY++;
+			if (cameraVY > 0) cameraVY--;
+			if (cameraVX < 0) cameraVX++;
+			if (cameraVX > 0) cameraVX--;
+			*/
+		}
+		
 		
 		//If holding right click, draw sever line
 		if (engine.mouse.RIGHT()) {
@@ -190,7 +246,7 @@ public class Main {
 		//If holding an input/output, draw a line from cursor to held
 		if (!grabbedUUID.equals("")) {
 			g.setColor(drawLineColor);
-			Node.Output output = searchByUUID(grabbedUUID);
+			Node.Output output = Methods.searchOutputsByUUID(nodes, grabbedUUID);
 			g.drawLine(output.trueX, output.trueY, engine.mouse.getX(), engine.mouse.getY());
 		}
 		
@@ -202,7 +258,7 @@ public class Main {
 	
 	public static void paintDisplayNodes(Graphics g) {
 		for (int i = 0; i < menuNodes.size(); i++) {
-			menuNodes.get(i).render(g, pointFont, nodeFont);
+			menuNodes.get(i).render(g, pointFont, nodeFont, displayScroll);
 		}
 	}
 
@@ -211,11 +267,13 @@ public class Main {
 		paintNodes(g);
 		paintDisplayNodes(g);
 		
+		/*
 		g.setFont(nodeFont);
 		g.setColor(Color.black);
 		g.drawString("Transistors: " + String.valueOf(getAmountOfTransistors()), 10, 50);
 		getCriticalPathDelay();
 		g.drawString("Critical Path Delay: " + critPathDelay + "ns", 10, 100);
+		*/
 	}
 
 	public static void mainLoop() {
@@ -233,7 +291,7 @@ public class Main {
 		//Iterate over nodes and update (deals with connections)
 		//Keeps track of what nodes are ran using an arraylist of uuids in order to avoid infinite looping
 		for (Node node : nodes) {
-			node.update(engine, nodes, ranUUIDs);
+			node.update(engine, nodes, ranUUIDs, hoveringID);
 		}
 		ranUUIDs.clear();
 		
@@ -267,8 +325,8 @@ public class Main {
 			}
 		}
 		
-		//If holding shift and click on node, remove it and break all connections that it has
-		if (engine.keys.LSHIFT()) {
+		//If holding ctrl and click on node, remove it and break all connections that it has
+		if (engine.keys.K_CONTROL()) {
 			for (int i = 0; i < nodes.size(); i++) {
 				if (nodes.get(i).mouseIsHovering(engine) && engine.mouse.LEFTCLICKED()) {
 					nodes.get(i).prepareForRemoval(nodes);
@@ -276,8 +334,18 @@ public class Main {
 			}
 		}
 		
+		if (engine.keys.DELETETYPED()) {
+			for (int i = 0; i < nodes.size(); i++) {
+				if (selectedNodes.contains(nodes.get(i).uuid)) {
+					nodes.get(i).prepareForRemoval(nodes);
+					i--;
+				}
+			}
+			selectedNodes.clear();
+		}
+		
 		//If holding control and left click node, duplicate node and grab
-		if (engine.keys.K_CONTROL()) {
+		if (engine.keys.K_ALT()) {
 			if (engine.mouse.LEFT()) {
 				if (grabbedUUID.equals("") && grabbedNode.equals("")) {
 					for (Node node : nodes) {
@@ -291,13 +359,24 @@ public class Main {
 			}
 		}
 		
+		if (engine.keys.LSHIFT()) {
+			if (engine.mouse.LEFTCLICKED()) {
+				for (Node node : nodes) {
+					if (node.mouseIsHovering(engine)) {
+						if (selectedNodes.contains(node.uuid)) selectedNodes.remove(node.uuid);
+						else selectedNodes.add(node.uuid);
+					}
+				}
+			}
+		}
+		
 		//If holding left click and not shift, grab node
-		if (engine.mouse.LEFT()) {
+		if (engine.mouse.LEFT() && !engine.keys.LSHIFT()) {
 			if (!startedLeft) {
 				boolean grabbedSomething = false;
 				for (Node node : nodes) {
 					for (Node.Output output : node.outputs) {
-						if (node.inProx(output.trueX, output.trueY, node.pointRad, engine.mouse.getX(), engine.mouse.getY(), node.pointProx)) {
+						if (Methods.inProx(output.trueX, output.trueY, node.pointRad, engine.mouse.getX(), engine.mouse.getY(), node.pointProx)) {
 							grabbedUUID = output.uuid;
 							grabbedSomething = true;
 						}
@@ -307,6 +386,7 @@ public class Main {
 							grabbedNode = node.uuid;
 							grabXOffset = (node.x - engine.camera.getX()) - engine.mouse.getX();
 							grabYOffset = (node.y - engine.camera.getY()) - engine.mouse.getY();
+							selectedNodes.clear();
 						}
 							
 						grabbedSomething = true;
@@ -315,7 +395,7 @@ public class Main {
 				
 				//Menu of nodes to grab from at the bottom, detect if leftclicking one and grab one
 				for (DisplayNode node : menuNodes) {
-					if (node.mouseIsHovering(engine) && grabbedNode.equals("")) {
+					if (node.mouseIsHovering(engine, displayScroll) && grabbedNode.equals("")) {
 						nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), node.id, null, null, nodeFont));
 						grabbedNode = nodes.get(nodes.size() - 1).uuid;
 						break;
@@ -324,7 +404,7 @@ public class Main {
 			}
 			
 			if (!grabbedNode.equals("")) { //If already grabbed node, can't grab more (also filter for grabbing input/output)
-				Node grabbed = searchNodesByUUID(grabbedNode);
+				Node grabbed = Methods.searchNodesByUUID(nodes, grabbedNode);
 				grabbed.x = engine.mouse.getX() + engine.camera.getX() + grabXOffset;
 				grabbed.y = engine.mouse.getY() + engine.camera.getY() + grabYOffset;
 				grabbed.redrawConnections(nodes, engine);
@@ -335,9 +415,9 @@ public class Main {
 			if (!grabbedUUID.equals("")) {
 				for (Node node : nodes) {
 					for (Node.Input input : node.inputs) {
-						if (node.inProx(input.trueX, input.trueY, node.pointRad, engine.mouse.getX(), engine.mouse.getY(), node.pointProx)) {
+						if (Methods.inProx(input.trueX, input.trueY, node.pointRad, engine.mouse.getX(), engine.mouse.getY(), node.pointProx)) {
 							if (!input.uuid.equals(grabbedUUID) && !grabbedUUID.equals("")) {
-								searchByUUID(grabbedUUID).createConnection(input.uuid, engine, nodes, ranUUIDs);
+								Methods.searchOutputsByUUID(nodes, grabbedUUID).createConnection(input.uuid, engine, nodes, ranUUIDs);
 							}
 						}
 					}
@@ -383,34 +463,6 @@ public class Main {
 		return -1;
 	}
 	
-	public static Node.Output searchByUUID(String uuid) {
-		Node.Output output = null;
-		for (int i = 0; i < nodes.size(); i++) {
-			for (int j = 0; j < nodes.get(i).outputs.length; j++) {
-				if (nodes.get(i).outputs[j].uuid.equals(uuid)) output = nodes.get(i).outputs[j];
-			}
-		}
-		return output;
-	}
-	
-	public static Node.Input searchInputsByUUID(String uuid) {
-		Node.Input input = null;
-		for (int i = 0; i < nodes.size(); i++) {
-			for (int j = 0; j < nodes.get(i).inputs.length; j++) {
-				if (nodes.get(i).inputs[j].uuid.equals(uuid)) input = nodes.get(i).inputs[j];
-			}
-		}
-		return input;
-	}
-	
-	public static Node searchNodesByUUID(String toCheck) {
-		Node toOut = null;
-		for (int i = 0; i < nodes.size(); i++) {
-			if (nodes.get(i).uuid.equals(toCheck)) toOut = nodes.get(i);
-		}
-		return toOut;
-	}
-	
 	public static int getAmountOfTransistors() {
 		int toOut = 0;
 		
@@ -433,7 +485,7 @@ public class Main {
 		boolean readingNode = false;
 		
 		String id = "", uuid = "";
-		int x = 0, y = 0;
+		int x = 0, y = 0, decoderAmount = 0, h = 0;
 		ArrayList<Node.Input> inputs = new ArrayList<>();
 		ArrayList<Node.Output> outputs = new ArrayList<>();
 		boolean readingInputs = false, readingOutputs = false;
@@ -447,6 +499,8 @@ public class Main {
 				x = Integer.valueOf(reader.nextLine());
 				y = Integer.valueOf(reader.nextLine());
 				uuid = reader.nextLine();
+				decoderAmount = Integer.valueOf(reader.nextLine());
+				h = Integer.valueOf(reader.nextLine());
 				
 				String inputOutputCheck = reader.nextLine();
 				
@@ -469,34 +523,34 @@ public class Main {
 							}
 						}
 					}
+					inputOutputCheck = reader.nextLine();
 				}
 				
 				if (inputOutputCheck.equals("output:")) {
-					Scanner line = new Scanner(reader.nextLine());
-					String inID = line.next();
-					String inUUID = line.next();
-					
-					Node.Output toOutput = new Node.Output(inID, uuid);
-					toOutput.uuid = inUUID;
-					
-					outputs.add(toOutput);
-				}
-				
-				inputOutputCheck = reader.nextLine();
-				if (inputOutputCheck.equals("output:")) {
-					Scanner line = new Scanner(reader.nextLine());
-					String inID = line.next();
-					String inUUID = line.next();
-					
-					Node.Output toOutput = new Node.Output(inID, uuid);
-					toOutput.uuid = inUUID;
-					
-					outputs.add(toOutput);
-					reader.nextLine();
+					boolean readingOutput = true;
+					while (readingOutput) {
+						Scanner line = new Scanner(reader.nextLine());
+						String inID = line.next();
+						String inUUID = line.next();
+						
+						Node.Output toOutput = new Node.Output(inID, uuid);
+						toOutput.uuid = inUUID;
+						
+						outputs.add(toOutput);
+						
+						if (line.hasNext()) {
+							String doneCheck = line.next();
+							if (doneCheck.equals("done")) {
+								readingOutput = false;
+							}
+						}
+					}
 				}
 				
 				Node toMake = new Node(x,y,id,null,null, nodeFont);
 				toMake.uuid = uuid;
+				toMake.decoderAmount = decoderAmount;
+				toMake.h = h;
 				
 				if (inputs.size() > 0) {
 					Node.Input[] inputsArray = new Node.Input[inputs.size()];
@@ -522,7 +576,7 @@ public class Main {
 			if (line.next().equals("con:")) {
 				String outputUUID = line.next();
 				String inputUUID = line.next();
-				Node.Output find = searchByUUID(outputUUID);
+				Node.Output find = Methods.searchOutputsByUUID(nodes, outputUUID);
 				find.createConnection(inputUUID, engine, nodes, ranUUIDs);
 			}
 		}
@@ -530,7 +584,6 @@ public class Main {
 	
 	public static void saveToFile(String filename) {
 		try {
-			System.out.println(filename.substring(filename.length() - 5, filename.length()));
 			if (!filename.substring(filename.length() - 5, filename.length()).equals(".circ")) filename += ".circ";
 			
 			FileOutputStream fout = new FileOutputStream(filename);
@@ -562,6 +615,8 @@ public class Main {
 		toOut += node.x + "\n";
 		toOut += node.y + "\n";
 		toOut += node.uuid + "\n";
+		toOut += node.decoderAmount + "\n";
+		toOut += node.h + "\n";
 		if (node.inputs.length > 0) toOut += "input:\n";
 		for (int i = 0; i < node.inputs.length; i++) {
 			String toAdd = node.inputs[i].id + " " + node.inputs[i].uuid;
@@ -569,11 +624,20 @@ public class Main {
 			toAdd += "\n";
 			toOut += toAdd;
 		}
+		if (node.outputs.length > 0) toOut += "output:\n";
+		for (int i = 0; i < node.outputs.length; i++) {
+			String toAdd = node.outputs[i].id + " " + node.outputs[i].uuid;
+			if (i == node.outputs.length - 1) toAdd += " done";
+			toAdd += "\n";
+			toOut += toAdd;
+		}
+		/*
 		if (node.outputs.length > 0) {
 			toOut += "output:\n";
 			String toAdd = node.outputs[0].id + " " + node.outputs[0].uuid + "\n";
 			toOut += toAdd;
 		}
+		*/
 		toOut += "}\n";
 		return toOut;
 	}
@@ -621,7 +685,7 @@ public class Main {
 			for (int i = 0; i < node.outputs.length; i++) {
 				for (int ii = 0; ii < node.outputs[i].connectedUUIDs.size(); ii++) {
 					currentPathDelay += node.inputs.length;
-					Node toProp = searchNodesByUUID(searchInputsByUUID(node.outputs[i].connectedUUIDs.get(ii)).parentUUID);
+					Node toProp = Methods.searchNodesByUUID(nodes, Methods.searchInputsByUUID(nodes, node.outputs[i].connectedUUIDs.get(ii)).parentUUID);
 					propogateNodes(toProp);
 				}
 			}

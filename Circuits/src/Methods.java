@@ -1,4 +1,11 @@
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Scanner;
+
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class Methods {
 	public static int binaryToInt(String in) {
@@ -32,6 +39,7 @@ public class Methods {
 		return binaryToInt(binary);
 	}
 	
+	//Credit to GeeksForGeeks
 	public static boolean[] fullAdd(boolean a, boolean b, boolean c) {
 		boolean[] toOut = {false, false};
 		
@@ -97,7 +105,10 @@ public class Methods {
 	public static Node searchByUUID(ArrayList<Node> nodes, String toCheck) {
 		Node toOut = null;
 		for (int i = 0; i < nodes.size(); i++) {
-			if (nodes.get(i).uuid.equals(toCheck)) toOut = nodes.get(i);
+			if (nodes.get(i).uuid.equals(toCheck)) {
+				toOut = nodes.get(i);
+				break;
+			}
 		}
 		return toOut;
 	}
@@ -109,6 +120,7 @@ public class Methods {
 			for (int j = 0; j < nodes.get(i).outputs.length; j++) {
 				if (nodes.get(i).outputs[j].uuid.equals(toCheck)) {
 					toOut = nodes.get(i).outputs[j];
+					break;
 				}
 			}
 		}
@@ -123,6 +135,7 @@ public class Methods {
 			for (int j = 0; j < nodes.get(i).inputs.length; j++) {
 				if (nodes.get(i).inputs[j].uuid.equals(toCheck)) {
 					toOut = nodes.get(i).inputs[j];
+					break;
 				}
 			}
 		}
@@ -133,7 +146,10 @@ public class Methods {
 	public static Node searchNodesByUUID(ArrayList<Node> nodes, String toCheck) {
 		Node toOut = null;
 		for (int i = 0; i < nodes.size(); i++) {
-			if (nodes.get(i).uuid.equals(toCheck)) toOut = nodes.get(i);
+			if (nodes.get(i).uuid.equals(toCheck)) {
+				toOut = nodes.get(i);
+				break;
+			}
 		}
 		return toOut;
 	}
@@ -153,7 +169,10 @@ public class Methods {
 		int index = -1;
 		
 		for (int i = 0; i < node.outputs.length; i++) {
-			if (toUUID.equals(node.outputs[i].uuid)) index = i;
+			if (toUUID.equals(node.outputs[i].uuid)) {
+				index = i;
+				break;
+			}
 		}
 		
 		return index;
@@ -163,9 +182,85 @@ public class Methods {
 		int index = -1;
 		
 		for (int i = 0; i < node.inputs.length; i++) {
-			if (toUUID.equals(node.inputs[i].uuid)) index = i;
+			if (toUUID.equals(node.inputs[i].uuid)) {
+				index = i;
+				break;
+			}
 		}
 		
 		return index;
+	}
+	
+	public static int maxInArrayList(ArrayList<Integer> list) {
+		int max = 0;
+		
+		for (int i = 0; i < list.size(); i++) {
+			if (i == 0) max = list.get(i);
+			else {
+				if (list.get(i) > max) max = list.get(i);
+			}
+		}
+		
+		return max;
+	}
+	
+	public static int minInArrayList(ArrayList<Integer> list) {
+		int min = 0;
+		
+		for (int i = 0; i < list.size(); i++) {
+			if (i == 0) min = list.get(i);
+			else {
+				if (list.get(i) < min) min = list.get(i);
+			}
+		}
+		
+		return min;
+	}
+	
+	public static void loadCustomNodeFromFile(ArrayList<Node> nodes, Font nodeFont, Engine engine) {
+		JFileChooser fileChooser = new JFileChooser();
+		String chosenFilePath = "";
+		fileChooser.setDialogTitle("Choose Node file");
+		fileChooser.setFileFilter(new FileNameExtensionFilter("Node Files", "node"));
+		int dialog = fileChooser.showOpenDialog(null);
+		if (dialog == JFileChooser.APPROVE_OPTION)
+			 
+        {
+            // set the label to the path of the selected file
+            chosenFilePath = fileChooser.getSelectedFile().getAbsolutePath();
+            System.out.println("FilePath: " + chosenFilePath);
+        }
+		if (!chosenFilePath.equals("")) {
+			try {
+				Scanner reader = new Scanner(new File(chosenFilePath));
+				String toID = reader.nextLine();
+				int inputCount = Integer.valueOf(reader.nextLine());
+				int outputCount = Integer.valueOf(reader.nextLine());
+				String[] toInputs = new String[inputCount];
+				String[] toOutputs = new String[outputCount];
+				Node toMake = new Node(engine.scrWidth / 2, engine.scrWidth / 2, "custom", toInputs, toOutputs, nodeFont, true);
+				toMake.id = toID;
+				System.out.println(toMake.id);
+				toMake.addInputsAndOutputs(inputCount, outputCount);
+				toMake.customBehavior = reader.nextLine();
+				FontMetrics metrics = engine.scr.getFontMetrics(nodeFont);
+				toMake.w = metrics.stringWidth(toMake.id) + 20;
+
+				nodes.add(toMake);
+				System.out.println(nodes);
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public static boolean isInteger(String str) {
+	    try {
+	        Integer.parseInt(str);
+	        return true; // The string is a valid integer
+	    } catch (NumberFormatException e) {
+	        return false; // The string is not a valid integer
+	    }
 	}
 }

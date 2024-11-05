@@ -142,7 +142,8 @@ public class Main {
 		addDisplayNode("4BitDisplay", 740);
 		addDisplayNode("4BitAdder", 855);
 		addDisplayNode("decoder", 960);
-		addDisplayNode("mux", 1040);
+		addDisplayNode("encoder", 1060);
+		addDisplayNode("mux", 1145);
 		
 		try {
 			engine.run();
@@ -277,16 +278,10 @@ public class Main {
 	}
 
 	public static void mainLoop() {
-		//Based on pressed key, summon a node at cursor
-		if (engine.keys.K1TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "switch", null, null, nodeFont));
-		if (engine.keys.K2TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "light", null, null, nodeFont));
-		if (engine.keys.K3TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "and", null, null, nodeFont));
-		if (engine.keys.K4TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "or", null, null, nodeFont));
-		if (engine.keys.K5TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "not", null, null, nodeFont));
-		if (engine.keys.K6TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "xor", null, null, nodeFont));
-		if (engine.keys.K7TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "nand", null, null, nodeFont));
-		if (engine.keys.K8TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "nor", null, null, nodeFont));
-		if (engine.keys.K9TYPED()) nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), "xnor", null, null, nodeFont));
+		
+		if (engine.keys.NTYPED()) {
+			Methods.loadCustomNodeFromFile(nodes, nodeFont, engine);
+		}
 		
 		//Iterate over nodes and update (deals with connections)
 		//Keeps track of what nodes are ran using an arraylist of uuids in order to avoid infinite looping
@@ -350,7 +345,7 @@ public class Main {
 				if (grabbedUUID.equals("") && grabbedNode.equals("")) {
 					for (Node node : nodes) {
 						if (node.mouseIsHovering(engine)) {
-							nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), node.id, null, null, nodeFont));
+							nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), node.id, null, null, nodeFont, false));
 							grabbedNode = nodes.get(nodes.size() - 1).uuid;
 							break;
 						}
@@ -396,7 +391,7 @@ public class Main {
 				//Menu of nodes to grab from at the bottom, detect if leftclicking one and grab one
 				for (DisplayNode node : menuNodes) {
 					if (node.mouseIsHovering(engine, displayScroll) && grabbedNode.equals("")) {
-						nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), node.id, null, null, nodeFont));
+						nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), node.id, null, null, nodeFont, false));
 						grabbedNode = nodes.get(nodes.size() - 1).uuid;
 						break;
 					}
@@ -484,7 +479,7 @@ public class Main {
 		catch (Exception e) {}
 		boolean readingNode = false;
 		
-		String id = "", uuid = "";
+		String id = "", uuid = "", customBehavior = "";
 		int x = 0, y = 0, decoderAmount = 0, h = 0;
 		ArrayList<Node.Input> inputs = new ArrayList<>();
 		ArrayList<Node.Output> outputs = new ArrayList<>();
@@ -501,6 +496,7 @@ public class Main {
 				uuid = reader.nextLine();
 				decoderAmount = Integer.valueOf(reader.nextLine());
 				h = Integer.valueOf(reader.nextLine());
+				customBehavior = reader.nextLine();
 				
 				String inputOutputCheck = reader.nextLine();
 				
@@ -546,11 +542,15 @@ public class Main {
 						}
 					}
 				}
-				
-				Node toMake = new Node(x,y,id,null,null, nodeFont);
+
+				String[] toInputs = new String[0];
+				String[] toOutputs = new String[0];
+				Node toMake = new Node(x,y,id,toInputs, toOutputs, nodeFont, !customBehavior.equals(""));
 				toMake.uuid = uuid;
 				toMake.decoderAmount = decoderAmount;
 				toMake.h = h;
+				
+				toMake.customBehavior = customBehavior;
 				
 				if (inputs.size() > 0) {
 					Node.Input[] inputsArray = new Node.Input[inputs.size()];
@@ -617,6 +617,7 @@ public class Main {
 		toOut += node.uuid + "\n";
 		toOut += node.decoderAmount + "\n";
 		toOut += node.h + "\n";
+		toOut += node.customBehavior + "\n";
 		if (node.inputs.length > 0) toOut += "input:\n";
 		for (int i = 0; i < node.inputs.length; i++) {
 			String toAdd = node.inputs[i].id + " " + node.inputs[i].uuid;

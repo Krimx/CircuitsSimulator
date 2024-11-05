@@ -47,7 +47,7 @@ public class DisplayNode {
 			new Color(251,255,202),
 			new Color(200,200,200),
 			new Color(251,255,104),
-			new Color(0,0,0),
+			new Color(195,249,204),
 			new Color(230,255,0),
 			new Color(205,249,130)};
 	
@@ -74,6 +74,7 @@ public class DisplayNode {
 		else if (this.id.equals("4BitAdder")) this.w = 105;
 		else if (this.id.equals("4BitDisplay")) this.w = 115;
 		else if (this.id.equals("decoder")) this.w = 90;
+		else if (this.id.equals("encoder")) this.w = 90;
 		else if (this.id.equals("mux")) this.w = 60;
 		else if (this.id.equals("custom")) this.w = 90;
 		else this.w = 100;

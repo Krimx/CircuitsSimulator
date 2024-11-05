@@ -5,6 +5,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Stroke;
 import java.util.ArrayList;
+import java.util.Scanner;
 import java.util.UUID;
 
 //TODO: Figure out setting width to id string size
@@ -28,6 +29,9 @@ public class Node {
 	public int value;
 	public boolean pausePanning;
 	public int decoderAmount;
+	public boolean encoderHigh;
+	public String customBehavior;
+	public boolean custom;
 	
 	public String[] ids = {
 			"and",
@@ -60,11 +64,15 @@ public class Node {
 			new Color(251,255,202),
 			new Color(200,200,200),
 			new Color(251,255,104),
-			new Color(0,0,0),
+			new Color(195,249,204),
 			new Color(230,255,0),
 			new Color(205,249,130)};
 	
-	public Node(int x, int y, String id, String[] inputs, String[] outputs, Font nodeFont) {
+	public Node() {
+		this(0,0,"no_name",null,null,null, true);
+	}
+	
+	public Node(int x, int y, String id, String[] inputs, String[] outputs, Font nodeFont, boolean custom) {
 		this.id = id;
 		this.x = x;
 		this.y = y;
@@ -77,10 +85,14 @@ public class Node {
 		this.transistors = 0;
 		this.pointProx = 6;
 		this.decoderAmount = 2;
+		this.encoderHigh = false;
 		
 		this.binary4BitValue = "0000";
 		this.value = 0;
 		this.pausePanning = false;
+		
+		this.custom = custom;
+		this.customBehavior = "";
 
 		if (this.id.equals("and")) addInputsAndOutputs(2,1);
 		else if (this.id.equals("or")) addInputsAndOutputs(2,1);
@@ -142,6 +154,19 @@ public class Node {
 			this.outputs[2] = new Output("B2", this.uuid);
 			this.outputs[3] = new Output("B3", this.uuid);
 		}
+		else if (this.id.equals("encoder")) {
+			this.inputs = new Input[4];
+			this.outputs = new Output[3];
+
+			this.inputs[0] = new Input("A0", this.uuid);
+			this.inputs[1] = new Input("A1", this.uuid);
+			this.inputs[2] = new Input("A2", this.uuid);
+			this.inputs[3] = new Input("A3", this.uuid);
+
+			this.outputs[0] = new Output("B0", this.uuid);
+			this.outputs[1] = new Output("B1", this.uuid);
+			this.outputs[2] = new Output("B2", this.uuid);
+		}
 		else if (this.id.equals("mux")) {
 			this.inputs = new Input[3];
 			this.outputs = new Output[1];
@@ -153,7 +178,7 @@ public class Node {
 			this.outputs[0] = new Output("B0", this.uuid);
 		}
 		else if (this.id.equals("custom")) {
-			addInputsAndOutputs(1,1);
+			addInputsAndOutputs(inputs.length, outputs.length);
 		}
 		else {
 			this.inputs = new Input[inputs.length];
@@ -182,12 +207,18 @@ public class Node {
 		else if (this.id.equals("4BitNumber")) this.w = 100;
 		else if (this.id.equals("4BitAdder")) this.w = 115;
 		else if (this.id.equals("4BitDisplay")) this.w = 115;
-		else if (this.id.equals("decoder")) this.w = 125;
+		else if (this.id.equals("decoder")) this.w = 135;
+		else if (this.id.equals("encoder")) this.w = 135;
 		else if (this.id.equals("mux")) this.w = 60;
 		else if (this.id.equals("custom")) this.w = 90;
 		else this.w = 100;
 		
-		this.color = cols[Methods.indexOf(this.id, ids)];
+		if (!this.custom) {
+			this.color = cols[Methods.indexOf(this.id, ids)];
+		}
+		else {
+			this.color = cols[cols.length - 1];
+		}
 	}
 	
 	public void addInputsAndOutputs(int ins, int outs) {
@@ -366,57 +397,6 @@ public class Node {
 		}
 	}
 	
-	public void render(Graphics g, Font pointFont, Font nodeFont) {
-		g.setColor(this.color);
-		if (this.id.equals("switch")) {
-			if (this.outputs[0].state) g.setColor(new Color(49,250,52));
-			else g.setColor(new Color(6,63,16));
-		}
-		if (this.id.equals("light")) {
-			if (this.inputs[0].state) g.setColor(new Color(45,225,245));
-			else g.setColor(new Color(16,34,68));
-		}
-		g.fillRect(x - (this.w / 2), y - (this.h / 2), w, h);
-		g.setColor(Color.black);
-		if (this.selected) g.setColor(Color.yellow);
-		g.drawRect(x - (this.w / 2), y - (this.h / 2), w, h);
-		
-		g.setColor(Color.black);
-		g.setFont(nodeFont);
-		g.drawString(this.id, this.x - (this.w / 2) + 10, this.y + 8);
-		
-		for (int i = 0; i < this.inputs.length; i++) {
-			//Gathering render positions
-			int rad = this.pointRad;
-			int toY = this.y + (this.yOffset + (this.yOffset / 2)) + (i * this.yGap) - (this.h / 2);
-			int toX = this.x - (this.w / 2);
-			this.inputs[i].trueX = toX;
-			this.inputs[i].trueY = toY;
-			
-			g.setColor(new Color(243, 240, 226));
-			
-			g.fillOval(toX - rad, toY - rad, rad * 2, rad * 2);
-			
-			g.setColor(Color.black);
-			g.drawOval(toX - rad, toY - rad, rad * 2, rad * 2);
-		}
-		
-		for (int i = 0; i < this.outputs.length; i++) {
-			int rad = this.pointRad;
-			int toY = this.y + (this.yOffset + (this.yOffset / 2)) + (i * this.yGap) - (this.h / 2);
-			int toX = this.x + (this.w / 2);
-			this.outputs[i].trueX = toX;
-			this.outputs[i].trueY = toY;
-			
-			g.setColor(new Color(243, 240, 226));
-			
-			g.fillOval(toX - rad, toY - rad, rad * 2, rad * 2);
-			
-			g.setColor(Color.black);
-			g.drawOval(toX - rad, toY - rad, rad * 2, rad * 2);
-		}
-	}
-	
 	public boolean render(Graphics g, Engine engine, Font pointFont, Font nodeFont, Engine.Camera camera, ArrayList<Node> nodes, String grabbedUUID, ArrayList<String> selectedNodes) {
 		boolean inScreen = false;
 		Graphics2D g2d = (Graphics2D) g;
@@ -471,6 +451,10 @@ public class Node {
 			g2d.setColor(Color.black);
 			g2d.setFont(nodeFont);
 			g2d.drawString(this.id, this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY());
+			if (this.id.equals("encoder")) {
+				String highOrLow = (this.encoderHigh) ? "(High)" : "(Low)";
+				g2d.drawString(highOrLow, this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY() + 20);
+			}
 		}
 		
 		this.pointHovering = false;
@@ -685,6 +669,18 @@ public class Node {
 				this.outputs = newOutputs;
 			}
 		}
+		if (this.id.equals("encoder")) {
+			if (mouseIsHovering(engine)) {
+				if (engine.keys.UPTYPED()) {
+					this.encoderHigh = true;
+					logic(nodes, ranUUIDs);
+				}
+				if (engine.keys.DOWNTYPED()) {
+					this.encoderHigh = false;
+					logic(nodes, ranUUIDs);
+				}
+			}
+		}
 	}
 	
 	public boolean mouseIsHovering(Engine engine) {
@@ -802,6 +798,170 @@ public class Node {
 			if (this.id.equals("mux")) {
 				this.outputs[0].state = this.inputs[this.inputs[2].state ? 1: 0].state;
 			}
+			if (this.id.equals("encoder")) {
+				//Store all bits that are on into an array. Based on priority, select either highest or lowest bit index and output it
+				ArrayList<Integer> onBits = new ArrayList<>();
+				
+				for (int i = 0; i < this.inputs.length; i++) {
+					if (this.inputs[i].state) onBits.add(i);
+				}
+				
+				int priorityBit = 0;
+				
+				if (onBits.size() > 0) {
+					if (this.encoderHigh) priorityBit = Methods.maxInArrayList(onBits);
+					else priorityBit = Methods.minInArrayList(onBits);
+				}
+				
+				String binaryString = Methods.intToBinary(priorityBit, 3);
+				
+				if (binaryString.length() == 3) {
+					for (int i = 0; i < 3; i++) {
+						this.outputs[i].state = (binaryString.charAt(i) == '1') ? true : false;
+					}
+				}
+			}
+			if (this.custom) {
+				//ArrayLists to store values and a list of actions to take sequentially
+				ArrayList<String> actions = new ArrayList<>();
+				ArrayList<String> vars = new ArrayList<>();
+				ArrayList<Boolean> states = new ArrayList<>();
+				
+				//Iterate through behavior script to gather all actions (actions are defined between {})
+				for (int i = 0; i < customBehavior.length(); i++) {
+					//Find open bracket
+					if (customBehavior.charAt(i) == '{') {
+						//Find position of next closing bracket
+						int endBracket = -1;
+						for (int ii = i; ii < customBehavior.length(); ii++) {
+							if (customBehavior.charAt(ii) == '}') {
+								endBracket = ii;
+								ii = customBehavior.length();
+							}
+						}
+						//Add action between brackets to ArrayList of actions
+						String action = customBehavior.substring(i + 1, endBracket);
+						actions.add(action);
+					}
+				}
+				
+				try {
+					for (String action : actions) {
+						Scanner reader = new Scanner(action);
+						int iter = 0;
+						int assignOutput = -1;
+						String assignOutputString = "";
+						String assignmentOperator = "";
+						String operand1 = "", operand2 = "", operation = "";
+						boolean output = false;
+						int operand1Index = -1, operand2Index = -1;
+						
+						while (reader.hasNext()) {
+							if (iter == 0) {
+								String assignment = reader.next();
+								iter++;
+								
+								if (Methods.isInteger(assignment)) {
+									assignOutput = Integer.parseInt(assignment);
+								}
+								else {
+									 if (!vars.contains(assignment)) {
+										 assignOutputString = assignment;
+										 vars.add(assignment);
+										 states.add(false);
+									 }
+								}
+							}
+							else if (iter == 1) {
+								assignmentOperator = reader.next();
+								iter++;
+							}
+							else if (iter == 2) {
+								operand1 = reader.next();
+								iter++;
+							}
+							else if (iter == 3) {
+								operation = reader.next();
+								iter++;
+							}
+							else if (iter == 4) {
+								operand2 = reader.next();
+								iter++;
+							}
+						}
+
+						if (Methods.isInteger(operand1)) operand1Index = Integer.parseInt(operand1);
+						if (Methods.isInteger(operand2)) operand2Index = Integer.parseInt(operand2);
+						
+						if (iter > 3) {
+							if (operand1Index >= 0 && operand2Index >= 0) {
+								if (operation.equals("&&")) {
+									output = this.inputs[operand1Index].state && this.inputs[operand2Index].state;
+								}
+								else if (operation.equals("||")) {
+									output = this.inputs[operand1Index].state || this.inputs[operand2Index].state;
+								}
+								else if (operation.equals("^^")) {
+									output = this.inputs[operand1Index].state ^ this.inputs[operand2Index].state;
+								}
+							}
+							if (operand1Index >= 0 && operand2Index < 0) {
+								if (operation.equals("&&")) {
+									output = this.inputs[operand1Index].state && states.get(vars.indexOf(operand2));
+								}
+								else if (operation.equals("||")) {
+									output = this.inputs[operand1Index].state || states.get(vars.indexOf(operand2));
+								}
+								else if (operation.equals("^^")) {
+									output = this.inputs[operand1Index].state ^ states.get(vars.indexOf(operand2));
+								}
+							}
+							if (operand1Index < 0 && operand2Index >= 0) {
+								if (operation.equals("&&")) {
+									output = states.get(vars.indexOf(operand1)) && this.inputs[operand2Index].state;
+								}
+								else if (operation.equals("||")) {
+									output = states.get(vars.indexOf(operand1)) || this.inputs[operand2Index].state;
+								}
+								else if (operation.equals("^^")) {
+									output = states.get(vars.indexOf(operand1)) ^ this.inputs[operand2Index].state;
+								}
+							}
+							else if (operand1Index < 0 && operand2Index < 0){
+								if (operation.equals("&&")) {
+									output = states.get(vars.indexOf(operand1)) && states.get(vars.indexOf(operand2));
+								}
+								else if (operation.equals("||")) {
+									output = states.get(vars.indexOf(operand1)) || states.get(vars.indexOf(operand2));
+								}
+								else if (operation.equals("^^")) {
+									output = states.get(vars.indexOf(operand1)) ^ states.get(vars.indexOf(operand2));
+								}
+							}
+						}
+						else {
+							if (operand1Index < 0) {
+								output = states.get(vars.indexOf(operand1));
+							}
+							else {
+								output = this.inputs[operand1Index].state;
+							}
+						}
+						
+						
+						if (assignOutput < 0) {
+							states.set(vars.indexOf(assignOutputString), assignmentOperator.equals("=!") ? !output: output);
+						}
+						else {
+							this.outputs[assignOutput].state = assignmentOperator.equals("=!") ? !output: output;
+						}
+					}
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+				}
+				
+			}
 			
 			sendAllOutputs(nodes, ranUUIDs);
 		}
@@ -833,6 +993,6 @@ public class Node {
 	
 	
 	
-	//Credit to GeeksForGeeks
+	
 	
 }

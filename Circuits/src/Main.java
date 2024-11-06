@@ -126,7 +126,7 @@ public class Main {
 		
 		engine.frame.setVisible(true);
 		
-		String[] menuNodesToAdd = {"switch", "light", "and", "or", "not", "xor", "nand", "nor", "xnor", "4BitNumber", "4BitDisplay", "decoder", "encoder", "mux"};
+		String[] menuNodesToAdd = {"switch", "light", "and", "or", "not", "xor", "nand", "nor", "xnor", "4BitNumber", "4BitDisplay", "4BitAdder", "decoder", "encoder", "mux"};
 		
 		int nextX = 0;
 		int margin = 5;

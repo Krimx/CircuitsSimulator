@@ -39,16 +39,6 @@ public class Methods {
 		return binaryToInt(binary);
 	}
 	
-	//Credit to GeeksForGeeks
-	public static boolean[] fullAdd(boolean a, boolean b, boolean c) {
-		boolean[] toOut = {false, false};
-		
-		toOut[0] = (!a && !b && c) || (!a && b && !c) || (a && !b && !c) || (a && b && c);
-		toOut[1] = (!a && b && c) || (a && !b && c) || (a && b && !c) || (a && b && c);
-		
-		return toOut;
-	}
-	
 	public static String intToBinary (int n, int numOfBits) {
 	   String binary = "";
 	   for(int i = 0; i < numOfBits; ++i, n/=2) {
@@ -262,5 +252,31 @@ public class Methods {
 	    } catch (NumberFormatException e) {
 	        return false; // The string is not a valid integer
 	    }
+	}
+	
+	public static boolean[] fullAdd(boolean A, boolean B, boolean carryIn) {
+		boolean[] toOut = {false, false};
+		
+		toOut[0] = (A ^ B) ^ carryIn;
+		toOut[1] = (A && B) || ((A ^ B) && carryIn);
+		
+		return toOut;
+	}
+	
+	public static boolean[] rippleCarryAddSubtract(boolean[] A, boolean[] B, boolean subtract) {
+		boolean[] toOut = {false, false, false, false, false};
+
+		boolean[] add1 = fullAdd(A[3], B[3] ^ subtract, subtract);
+		boolean[] add2 = fullAdd(A[2], B[2] ^ subtract, add1[1]);
+		boolean[] add3 = fullAdd(A[1], B[1] ^ subtract, add2[1]);
+		boolean[] add4 = fullAdd(A[0], B[0] ^ subtract, add3[1]);
+
+		toOut[3] = add1[0];
+		toOut[2] = add2[0];
+		toOut[1] = add3[0];
+		toOut[0] = add4[0];
+		toOut[4] = add4[1];
+		
+		return toOut;
 	}
 }

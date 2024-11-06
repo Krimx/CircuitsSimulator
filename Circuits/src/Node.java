@@ -755,6 +755,17 @@ public class Node {
 				this.outputs[0].state = !(this.inputs[0].state ^ this.inputs[1].state);
 			}
 			if (this.id.equals("4BitAdder")) {
+				boolean[] A = {inputs[0].state, inputs[1].state, inputs[2].state, inputs[3].state};
+				boolean[] B = {inputs[4].state, inputs[5].state, inputs[6].state, inputs[7].state};
+				
+				boolean[] result = Methods.rippleCarryAddSubtract(A, B, inputs[8].state);
+
+				this.outputs[0].state = result[0];
+				this.outputs[1].state = result[1];
+				this.outputs[2].state = result[2];
+				this.outputs[3].state = result[3];
+				this.outputs[4].state = result[4];
+				/*
 				int a = Methods.bits4ToInt(inputs[0].state, inputs[1].state, inputs[2].state, inputs[3].state);
 				int b = Methods.bits4ToInt(inputs[4].state, inputs[5].state, inputs[6].state, inputs[7].state);
 				int sum = 0;
@@ -773,6 +784,9 @@ public class Node {
 					outputs[i].state = (sumBinary.charAt(i) == '1') ? true : false;
 				}
 				outputs[4].state = (carry == 0) ? false : true;
+				*/
+				
+				
 			}
 			if (this.id.equals("4BitDisplay")) {
 				String bits = "";

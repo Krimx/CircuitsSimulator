@@ -96,15 +96,12 @@ public class Main {
 	public static void main(String[] args) {
 		try {
 			trashCan = ImageIO.read(new FileInputStream("recs/trashy.png"));
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		//Load a file chooser upon program launch
-		fileChooser.setDialogTitle("Choose Circuit File (Close for default)");
+		fileChooser.setDialogTitle("Choose Circuit File ([ESCAPE] for blank project)");
 		fileChooser.setFileFilter(new FileNameExtensionFilter("Circuit Files", "circ"));
 		//fileChooser.showSaveDialog(null);
 		//fileChooser.addChoosableFileFilter(null);
@@ -125,25 +122,19 @@ public class Main {
 		*/
 		
 		//Do ingine initialization process
-		engine.initializeJFrame(800, 800, false, false, 60);
+		engine.initializeJFrame(800, 800, true, false, 60);
 		
 		engine.frame.setVisible(true);
-
-		addDisplayNode("switch", 50);
-		addDisplayNode("light", 120);
-		addDisplayNode("and", 180);
-		addDisplayNode("or", 230);
-		addDisplayNode("not", 275);
-		addDisplayNode("xor", 330);
-		addDisplayNode("nand", 395);
-		addDisplayNode("nor", 460);
-		addDisplayNode("xnor", 520);
-		addDisplayNode("4BitNumber", 615);
-		addDisplayNode("4BitDisplay", 740);
-		addDisplayNode("4BitAdder", 855);
-		addDisplayNode("decoder", 960);
-		addDisplayNode("encoder", 1060);
-		addDisplayNode("mux", 1145);
+		
+		String[] menuNodesToAdd = {"switch", "light", "and", "or", "not", "xor", "nand", "nor", "xnor", "4BitNumber", "4BitDisplay", "decoder", "encoder", "mux"};
+		
+		int nextX = 0;
+		int margin = 5;
+		for (int i = 0; i < menuNodesToAdd.length; i++) {
+			addDisplayNode(menuNodesToAdd[i], nextX + margin);
+			menuNodes.get(menuNodes.size() - 1).x += menuNodes.get(menuNodes.size() - 1).w / 2;
+			nextX = menuNodes.get(menuNodes.size() - 1).x + (menuNodes.get(menuNodes.size() - 1).w / 2);
+		}
 		
 		try {
 			engine.run();
@@ -206,6 +197,7 @@ public class Main {
 			int scrollDifference = (int) (engine.mouse.getScrollDifference() * scrollMultiplier);
 			if (engine.mouse.getY() >= engine.scrHeight - 100) {
 				displayScroll -= engine.mouse.getScrollDifference() * scrollMultiplier;
+				displayScroll = Math.max(0, displayScroll);
 			}
 			else {
 				if (engine.mouse.getIsVerticalScroll()) engine.camera.addY(-scrollDifference);
@@ -279,9 +271,11 @@ public class Main {
 
 	public static void mainLoop() {
 		
-		if (engine.keys.NTYPED()) {
-			Methods.loadCustomNodeFromFile(nodes, nodeFont, engine);
+		for (int i = 0; i < menuNodes.size(); i++) {
+			menuNodes.get(i).y = engine.scrHeight - 25;
 		}
+			
+		
 		
 		//Iterate over nodes and update (deals with connections)
 		//Keeps track of what nodes are ran using an arraylist of uuids in order to avoid infinite looping
@@ -292,28 +286,13 @@ public class Main {
 		
 		//If holding right click, create sever line
 		if (engine.mouse.RIGHT()) {
-			if (!startedRightClick) {
-				severLine.x1 = engine.mouse.getX();
-				severLine.y1 = engine.mouse.getY();
-				startedRightClick = true;
-			}
-			severLine.x2 = engine.mouse.getX();
-			severLine.y2 = engine.mouse.getY();
+			makeSeverLine();
+			
 		}
 		else {
 			//Process to know where to start the line so it can be properly drawn
 			if (startedRightClick) {
-				for (int i = 0; i < nodes.size(); i++) {
-					for (int j = 0; j < nodes.get(i).outputs.length; j++) {
-						for (int k = 0; k < nodes.get(i).outputs[j].connections.size(); k = k) {
-							if (severLine.doIntersect(nodes.get(i).outputs[j].connections.get(k))) {
-								nodes.get(i).outputs[j].severConnection(nodes, k);
-							}
-							else k++;
-						}
-					}
-				}
-				startedRightClick = false;
+				severConnection();
 			}
 			else {
 				severLine = new Line(-1,-1,-1,-1);
@@ -322,11 +301,7 @@ public class Main {
 		
 		//If holding ctrl and click on node, remove it and break all connections that it has
 		if (engine.keys.K_CONTROL()) {
-			for (int i = 0; i < nodes.size(); i++) {
-				if (nodes.get(i).mouseIsHovering(engine) && engine.mouse.LEFTCLICKED()) {
-					nodes.get(i).prepareForRemoval(nodes);
-				}
-			}
+			deleteNode();
 		}
 		
 		if (engine.keys.DELETETYPED()) {
@@ -340,103 +315,37 @@ public class Main {
 		}
 		
 		//If holding control and left click node, duplicate node and grab
-		if (engine.keys.K_ALT()) {
-			if (engine.mouse.LEFT()) {
-				if (grabbedUUID.equals("") && grabbedNode.equals("")) {
-					for (Node node : nodes) {
-						if (node.mouseIsHovering(engine)) {
-							nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), node.id, null, null, nodeFont, false));
-							grabbedNode = nodes.get(nodes.size() - 1).uuid;
-							break;
-						}
-					}
-				}
+		if (engine.keys.K_ALT() && engine.mouse.LEFT()) {
+			if (grabbedUUID.equals("") && grabbedNode.equals("")) {
+				cloneNode();
 			}
 		}
 		
-		if (engine.keys.LSHIFT()) {
-			if (engine.mouse.LEFTCLICKED()) {
-				for (Node node : nodes) {
-					if (node.mouseIsHovering(engine)) {
-						if (selectedNodes.contains(node.uuid)) selectedNodes.remove(node.uuid);
-						else selectedNodes.add(node.uuid);
-					}
-				}
-			}
+		if (engine.keys.LSHIFT() && engine.mouse.LEFTCLICKED()) {
+			selectNode();
 		}
 		
 		//If holding left click and not shift, grab node
 		if (engine.mouse.LEFT() && !engine.keys.LSHIFT()) {
-			if (!startedLeft) {
-				boolean grabbedSomething = false;
-				for (Node node : nodes) {
-					for (Node.Output output : node.outputs) {
-						if (Methods.inProx(output.trueX, output.trueY, node.pointRad, engine.mouse.getX(), engine.mouse.getY(), node.pointProx)) {
-							grabbedUUID = output.uuid;
-							grabbedSomething = true;
-						}
-					}
-					if (grabbedUUID.equals("") && grabbedNode.equals("")) {
-						if (node.mouseIsHovering(engine)) {
-							grabbedNode = node.uuid;
-							grabXOffset = (node.x - engine.camera.getX()) - engine.mouse.getX();
-							grabYOffset = (node.y - engine.camera.getY()) - engine.mouse.getY();
-							selectedNodes.clear();
-						}
-							
-						grabbedSomething = true;
-					}
-				}
-				
-				//Menu of nodes to grab from at the bottom, detect if leftclicking one and grab one
-				for (DisplayNode node : menuNodes) {
-					if (node.mouseIsHovering(engine, displayScroll) && grabbedNode.equals("")) {
-						nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), node.id, null, null, nodeFont, false));
-						grabbedNode = nodes.get(nodes.size() - 1).uuid;
-						break;
-					}
-				}
-			}
-			
-			if (!grabbedNode.equals("")) { //If already grabbed node, can't grab more (also filter for grabbing input/output)
-				Node grabbed = Methods.searchNodesByUUID(nodes, grabbedNode);
-				grabbed.x = engine.mouse.getX() + engine.camera.getX() + grabXOffset;
-				grabbed.y = engine.mouse.getY() + engine.camera.getY() + grabYOffset;
-				grabbed.redrawConnections(nodes, engine);
-			}
-			startedLeft = true;
+			grabNode();
 		}
 		else {
-			if (!grabbedUUID.equals("")) {
-				for (Node node : nodes) {
-					for (Node.Input input : node.inputs) {
-						if (Methods.inProx(input.trueX, input.trueY, node.pointRad, engine.mouse.getX(), engine.mouse.getY(), node.pointProx)) {
-							if (!input.uuid.equals(grabbedUUID) && !grabbedUUID.equals("")) {
-								Methods.searchOutputsByUUID(nodes, grabbedUUID).createConnection(input.uuid, engine, nodes, ranUUIDs);
-							}
-						}
-					}
-				}
-			}
-			startedLeft = false;
-			grabbedUUID = "";
-			grabbedNode = "";
+			grabInput();
 		}
 		
-		//Pressing [H] allows saving of a current state to a file to be loaded another time or shared
-		if (engine.keys.HTYPED()) {
-			fileChooser.setDialogTitle("Save Project File");
-			fileChooser.setFileFilter(new FileNameExtensionFilter("Circuit File", "circ"));
-			int dialog = fileChooser.showSaveDialog(null);
-			if (dialog == JFileChooser.APPROVE_OPTION)
-				 
-	        {
-	            // set the label to the path of the selected file
-	            chosenFilePath = fileChooser.getSelectedFile().getAbsolutePath();
-	        }
-			saveToFile(chosenFilePath);
+		if (engine.keys.K_CMD() || engine.keys.K_CONTROL()) {
+			if (engine.keys.STYPED()) {
+				openSaveDialogue("Save Project File", "Circuit File", "circ");
+				saveToFile(chosenFilePath);
+			}
+			
+			if (engine.keys.NTYPED()) {
+				Methods.loadCustomNodeFromFile(nodes, nodeFont, engine);
+			}
 		}
 	}
+	
+	
 	
 	public static boolean checkForNodeInSelection(Node node) {
 		if (node.x - node.w / 2 <= Math.max(selectBox[0], selectBox[2]) &&
@@ -582,30 +491,48 @@ public class Main {
 		}
 	}
 	
+	public static void openSaveDialogue(String title, String fileTypeName, String fileType) {
+		fileChooser.setDialogTitle("Save Project File");
+		fileChooser.setFileFilter(new FileNameExtensionFilter("Circuit File", "circ"));
+		int dialog = fileChooser.showSaveDialog(null);
+		if (dialog == JFileChooser.APPROVE_OPTION)
+			 
+        {
+            // set the label to the path of the selected file
+            chosenFilePath = fileChooser.getSelectedFile().getAbsolutePath();
+        }
+	}
+	
 	public static void saveToFile(String filename) {
-		try {
-			if (!filename.substring(filename.length() - 5, filename.length()).equals(".circ")) filename += ".circ";
-			
-			FileOutputStream fout = new FileOutputStream(filename);
-			
-			String data = "";
-			
-			for (Node node : nodes) {
-				data += saveNode(node);
-			}
-			data += collectConnections();
+		if (nodes.size() > 0) {
+			try {
+				if (!filename.substring(filename.length() - 5, filename.length()).equals(".circ")) filename += ".circ";
+				
+				FileOutputStream fout = new FileOutputStream(filename);
+				
+				String data = "";
+				
+				for (Node node : nodes) {
+					data += saveNode(node);
+				}
+				data += collectConnections();
 
-			data = data.substring(0, data.length() - 1);
-			
-			fout.write(data.getBytes());
-			
-			fout.flush();
-			fout.close();
-			
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+				data = data.substring(0, data.length() - 1);
+				
+				fout.write(data.getBytes());
+				
+				fout.flush();
+				fout.close();
+				
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
+		else {
+			System.out.println("No content in project, no file created.");
+		}
+		
 	}
 	
 	public static String saveNode(Node node) {
@@ -691,5 +618,114 @@ public class Main {
 				}
 			}
 		}
+	}
+	
+	public static void cloneNode() {
+		for (Node node : nodes) {
+			if (node.mouseIsHovering(engine)) {
+				nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), node.id, null, null, nodeFont, false));
+				grabbedNode = nodes.get(nodes.size() - 1).uuid;
+				break;
+			}
+		}
+	}
+	
+	public static void makeSeverLine() {
+		if (!startedRightClick) {
+			severLine.x1 = engine.mouse.getX();
+			severLine.y1 = engine.mouse.getY();
+			startedRightClick = true;
+		}
+		severLine.x2 = engine.mouse.getX();
+		severLine.y2 = engine.mouse.getY();
+	}
+	
+	public static void severConnection() {
+		for (int i = 0; i < nodes.size(); i++) {
+			for (int j = 0; j < nodes.get(i).outputs.length; j++) {
+				for (int k = 0; k < nodes.get(i).outputs[j].connections.size(); k = k) {
+					if (severLine.doIntersect(nodes.get(i).outputs[j].connections.get(k))) {
+						nodes.get(i).outputs[j].severConnection(nodes, k);
+					}
+					else k++;
+				}
+			}
+		}
+		startedRightClick = false;
+	}
+	
+	public static void deleteNode() {
+		for (int i = 0; i < nodes.size(); i++) {
+			if (nodes.get(i).mouseIsHovering(engine) && engine.mouse.LEFTCLICKED()) {
+				nodes.get(i).prepareForRemoval(nodes);
+			}
+		}
+	}
+	
+	public static void selectNode() {
+		for (Node node : nodes) {
+			if (node.mouseIsHovering(engine)) {
+				if (selectedNodes.contains(node.uuid)) selectedNodes.remove(node.uuid);
+				else selectedNodes.add(node.uuid);
+			}
+		}
+	}
+	
+	public static void grabNode() {
+		if (!startedLeft) {
+			boolean grabbedSomething = false;
+			for (Node node : nodes) {
+				for (Node.Output output : node.outputs) {
+					if (Methods.inProx(output.trueX, output.trueY, node.pointRad, engine.mouse.getX(), engine.mouse.getY(), node.pointProx)) {
+						grabbedUUID = output.uuid;
+						grabbedSomething = true;
+					}
+				}
+				if (grabbedUUID.equals("") && grabbedNode.equals("")) {
+					if (node.mouseIsHovering(engine)) {
+						grabbedNode = node.uuid;
+						grabXOffset = (node.x - engine.camera.getX()) - engine.mouse.getX();
+						grabYOffset = (node.y - engine.camera.getY()) - engine.mouse.getY();
+						selectedNodes.clear();
+					}
+						
+					grabbedSomething = true;
+				}
+			}
+			
+			//Menu of nodes to grab from at the bottom, detect if leftclicking one and grab one
+			for (DisplayNode node : menuNodes) {
+				if (node.mouseIsHovering(engine, displayScroll) && grabbedNode.equals("")) {
+					nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), node.id, null, null, nodeFont, false));
+					grabbedNode = nodes.get(nodes.size() - 1).uuid;
+					break;
+				}
+			}
+		}
+		
+		if (!grabbedNode.equals("")) { //If already grabbed node, can't grab more (also filter for grabbing input/output)
+			Node grabbed = Methods.searchNodesByUUID(nodes, grabbedNode);
+			grabbed.x = engine.mouse.getX() + engine.camera.getX() + grabXOffset;
+			grabbed.y = engine.mouse.getY() + engine.camera.getY() + grabYOffset;
+			grabbed.redrawConnections(nodes, engine);
+		}
+		startedLeft = true;
+	}
+	
+	public static void grabInput() {
+		if (!grabbedUUID.equals("")) {
+			for (Node node : nodes) {
+				for (Node.Input input : node.inputs) {
+					if (Methods.inProx(input.trueX, input.trueY, node.pointRad, engine.mouse.getX(), engine.mouse.getY(), node.pointProx)) {
+						if (!input.uuid.equals(grabbedUUID) && !grabbedUUID.equals("")) {
+							Methods.searchOutputsByUUID(nodes, grabbedUUID).createConnection(input.uuid, engine, nodes, ranUUIDs);
+						}
+					}
+				}
+			}
+		}
+		startedLeft = false;
+		grabbedUUID = "";
+		grabbedNode = "";
 	}
 }

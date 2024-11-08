@@ -1,22 +1,24 @@
 import java.awt.Color;
-import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Scanner;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 //TODO: Find solution to crashing when connection a node to a node that connects back to it
@@ -48,7 +50,6 @@ class FileTypeFilter implements FileFilter {
 public class Main {
 	public static Engine engine = new Engine(false);
 	public static ArrayList<Node> nodes = new ArrayList<>();
-	public static ArrayList<Node> displayNodes = new ArrayList<>();
 	public static Font pointFont = new Font("Helvetica", Font.PLAIN, 16);
 	public static Font nodeFont = new Font("Helvetica", Font.PLAIN, 20);
 	
@@ -62,19 +63,20 @@ public class Main {
 	public static JFileChooser fileChooser = new JFileChooser();
 	public static String chosenFilePath = "";
 	public static String saveFilePath = "";
-	
-	//Visual user guide (prone to being changed for visual and ui overhual)
-	public static int yOffset = -40;
 
 	public static Color bgColor = new Color(100,94,101);
 	public static Color drawLineColor = new Color(255,255,255);
 	public static Color offLineColor = new Color(105,0,0);
 	public static Color onLineColor = new Color(240,0,0);
 	public static Color severLineColor = new Color(0,0,0);
+	public static Color menuNodeAreaColor = new Color(90,84,91);
+	public static Color menuNodeColor = new Color(110,104,111);
+	public static Color menuNodeHoveringColor = new Color(120,114,121);
 	public static int nodeOutlineWidth = 3;
 	public static int nodeCornerArc = 3;
 	public static int connectionLineWidth = 3;
 	public static int grabXOffset = 0, grabYOffset = 0;
+	public static int menuAreaHeight = 50, menuNodeMargin = 5;
 	
 	public static ArrayList<String> ranUUIDs = new ArrayList<>();
 	
@@ -82,7 +84,7 @@ public class Main {
 	public static ArrayList<Integer> pathDelays = new ArrayList<>();
 	public static boolean startedLeft = false;
 	
-	public static ArrayList<DisplayNode> menuNodes = new ArrayList<>();
+	public static ArrayList<MenuNode> menuNodes = new ArrayList<>();
 	
 	public static BufferedImage trashCan;
 	
@@ -93,6 +95,11 @@ public class Main {
 	public static double scrollMultiplier = 3.5, panMultiplier = 1;
 	public static int cameraVX = 0, cameraVY = 0;
 	
+	public static JMenuBar menuBar = new JMenuBar();
+	public static JPopupMenu rightClickMenu = new JPopupMenu();
+	
+	public static String rightClickedUUID = "";
+	
 	public static void main(String[] args) {
 		try {
 			trashCan = ImageIO.read(new FileInputStream("recs/trashy.png"));
@@ -100,6 +107,7 @@ public class Main {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
 		//Load a file chooser upon program launch
 		fileChooser.setDialogTitle("Choose Circuit File ([ESCAPE] for blank project)");
 		fileChooser.setFileFilter(new FileNameExtensionFilter("Circuit Files", "circ"));
@@ -123,15 +131,67 @@ public class Main {
 		
 		//Do ingine initialization process
 		engine.initializeJFrame(800, 800, true, false, 60);
+		menuBar.setFont(nodeFont);
+		
+        JMenu barFileMenu = new JMenu("File");
+        JMenuItem saveMenuItem = new JMenuItem("Save Project As");
+        JMenuItem nodeMenuItem = new JMenuItem("Open Custom Node");
+        
+        saveMenuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	openSaveDialogue("Save Project File", "Circuit File", "circ");
+				saveToFile(chosenFilePath);
+            }
+        });
+        
+        nodeMenuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	Methods.loadCustomNodeFromFile(nodes, nodeFont, engine);
+            }
+        });
+
+        barFileMenu.add(saveMenuItem);
+        barFileMenu.add(nodeMenuItem);
+        menuBar.add(barFileMenu);
+        engine.frame.setJMenuBar(menuBar);
+
+        JMenuItem cloneOption = new JMenuItem("Clone");
+        JMenuItem deleteOption = new JMenuItem("Delete");
+        
+        
+        cloneOption.addActionListener(new ActionListener() {
+        	@Override
+        	public void actionPerformed(ActionEvent e) {
+        		if (!rightClickedUUID.equals("")) cloneNode(rightClickedUUID);
+        		rightClickedUUID = "";
+        		rightClickMenu.setVisible(false);
+        	}
+        });
+        
+        deleteOption.addActionListener(new ActionListener() {
+        	@Override
+        	public void actionPerformed(ActionEvent e) {
+        		if (!rightClickedUUID.equals("")) deleteNode(rightClickedUUID);
+        		rightClickedUUID = "";
+        		rightClickMenu.setVisible(false);
+        	}
+        });
+        
+
+        rightClickMenu.add(cloneOption);
+        rightClickMenu.add(deleteOption);
+        
+        
 		
 		engine.frame.setVisible(true);
 		
 		String[] menuNodesToAdd = {"switch", "light", "and", "or", "not", "xor", "nand", "nor", "xnor", "4BitNumber", "4BitDisplay", "4BitAdder", "decoder", "encoder", "mux"};
 		
 		int nextX = 0;
-		int margin = 5;
 		for (int i = 0; i < menuNodesToAdd.length; i++) {
-			addDisplayNode(menuNodesToAdd[i], nextX + margin);
+			addMenuNode(menuNodesToAdd[i], nextX + menuNodeMargin);
 			menuNodes.get(menuNodes.size() - 1).x += menuNodes.get(menuNodes.size() - 1).w / 2;
 			nextX = menuNodes.get(menuNodes.size() - 1).x + (menuNodes.get(menuNodes.size() - 1).w / 2);
 		}
@@ -142,8 +202,8 @@ public class Main {
 		catch(Exception e) {}
 	}
 	
-	public static void addDisplayNode(String id, int x) {
-		menuNodes.add(new DisplayNode(x, engine.scrHeight - 50, id, nodeFont));
+	public static void addMenuNode(String id, int x) {
+		menuNodes.add(new MenuNode(x, engine.scrHeight - 50, id, nodeFont));
 		//menuNodes.get(menuNodes.size() - 1).x += menuNodes.get(menuNodes.size() - 1).w / 2;
 	}
 	
@@ -181,6 +241,7 @@ public class Main {
 			if (nodes.get(i).mouseIsHovering(engine) && nodes.get(i).pausePanning) isHoveringOverPauser = true;
 		}
 		
+		
 		if (!isHoveringOverPauser) {
 			//If holding middle mouse button, drag camera around with mouse movement
 			if (engine.mouse.MIDDLE()) {
@@ -195,9 +256,19 @@ public class Main {
 			
 			//Trackpad panning support area
 			int scrollDifference = (int) (engine.mouse.getScrollDifference() * scrollMultiplier);
-			if (engine.mouse.getY() >= engine.scrHeight - 100) {
+			if (engine.mouse.getY() >= engine.scrHeight - menuAreaHeight) {
 				displayScroll -= engine.mouse.getScrollDifference() * scrollMultiplier;
 				displayScroll = Math.max(0, displayScroll);
+				
+				if (menuNodes.size() > 0) {
+					if (menuNodes.get(menuNodes.size() - 1).x + (menuNodes.get(menuNodes.size() - 1).w / 2) > engine.scrWidth - menuNodeMargin) {
+						displayScroll = Math.min(displayScroll, menuNodes.get(menuNodes.size() - 1).x + (menuNodes.get(menuNodes.size() - 1).w / 2) - (engine.scrWidth - menuNodeMargin));
+					}
+					else {
+						displayScroll = Math.min(displayScroll, 0);
+					}
+				}
+				
 			}
 			else {
 				if (engine.mouse.getIsVerticalScroll()) engine.camera.addY(-scrollDifference);
@@ -229,12 +300,29 @@ public class Main {
 			*/
 		}
 		
+		if (engine.mouse.RIGHTCLICKED()) {
+			boolean hoveringOverNode = false;
+			for (Node node : nodes) {
+				if (node.mouseIsHovering(engine)) {
+					hoveringOverNode = true;
+					rightClickedUUID = node.uuid;
+				}
+			}
+			hoveringOverNode = true;
+			if (hoveringOverNode) {
+				rightClickMenu.setLocation(new Point(engine.mouse.getX(), engine.mouse.getY() + 30));
+				rightClickMenu.setVisible(true);
+			}
+			
+		}
 		
 		//If holding right click, draw sever line
 		if (engine.mouse.RIGHT()) {
 			g.setColor(severLineColor);
 			g.drawLine(severLine.x1, severLine.y1, severLine.x2, severLine.y2);
 		}
+		
+		if (engine.mouse.LEFT()) rightClickMenu.setVisible(false);
 		
 		//If holding an input/output, draw a line from cursor to held
 		if (!grabbedUUID.equals("")) {
@@ -244,21 +332,24 @@ public class Main {
 		}
 		
 		if (engine.mouse.LEFT()) {
+			rightClickMenu.setVisible(false);
 			g.setColor(new Color(100,100,100,100));
 			g.fillRect(Math.min(selectBox[0], selectBox[2]), Math.min(selectBox[1], selectBox[3]), Math.max(selectBox[0], selectBox[2]) - Math.min(selectBox[0], selectBox[2]), Math.max(selectBox[1], selectBox[3]) - Math.min(selectBox[1], selectBox[3]));
 		}
 	}
 	
-	public static void paintDisplayNodes(Graphics g) {
+	public static void paintMenuNodes(Graphics g) {
 		for (int i = 0; i < menuNodes.size(); i++) {
-			menuNodes.get(i).render(g, pointFont, nodeFont, displayScroll);
+			menuNodes.get(i).render(g, pointFont, nodeFont, displayScroll, engine);
 		}
 	}
 
 	public static void paintToFrame(Graphics g) {
 		engine.setBackground(g, bgColor);
 		paintNodes(g);
-		paintDisplayNodes(g);
+		g.setColor(menuNodeAreaColor);
+		g.fillRect(0, engine.scrHeight - menuAreaHeight, engine.scrWidth, menuAreaHeight);
+		paintMenuNodes(g);
 		
 		/*
 		g.setFont(nodeFont);
@@ -317,7 +408,7 @@ public class Main {
 		//If holding control and left click node, duplicate node and grab
 		if (engine.keys.K_ALT() && engine.mouse.LEFT()) {
 			if (grabbedUUID.equals("") && grabbedNode.equals("")) {
-				cloneNode();
+				cloneNode(); 
 			}
 		}
 		
@@ -460,6 +551,7 @@ public class Main {
 				toMake.h = h;
 				
 				toMake.customBehavior = customBehavior;
+				toMake.parseCustomActions();
 				
 				if (inputs.size() > 0) {
 					Node.Input[] inputsArray = new Node.Input[inputs.size()];
@@ -629,6 +721,10 @@ public class Main {
 			}
 		}
 	}
+	public static void cloneNode(String uuid) {
+		Node toClone = Methods.searchByUUID(nodes, uuid);
+		nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), toClone.id, null, null, nodeFont, false));
+	}
 	
 	public static void makeSeverLine() {
 		if (!startedRightClick) {
@@ -662,6 +758,17 @@ public class Main {
 		}
 	}
 	
+	public static void deleteNode(String uuid) {
+		Methods.searchByUUID(nodes, uuid).prepareForRemoval(nodes);
+		if (selectedNodes.contains(uuid)) selectedNodes.remove(uuid);
+		if (selectedNodes.size() > 0) {
+			for (String selected : selectedNodes) {
+				Methods.searchByUUID(nodes, selected).prepareForRemoval(nodes);
+			}
+		}
+		selectedNodes.clear();
+	}
+	
 	public static void selectNode() {
 		for (Node node : nodes) {
 			if (node.mouseIsHovering(engine)) {
@@ -674,6 +781,7 @@ public class Main {
 	public static void grabNode() {
 		if (!startedLeft) {
 			boolean grabbedSomething = false;
+			boolean hovering = false;
 			for (Node node : nodes) {
 				for (Node.Output output : node.outputs) {
 					if (Methods.inProx(output.trueX, output.trueY, node.pointRad, engine.mouse.getX(), engine.mouse.getY(), node.pointProx)) {
@@ -683,18 +791,36 @@ public class Main {
 				}
 				if (grabbedUUID.equals("") && grabbedNode.equals("")) {
 					if (node.mouseIsHovering(engine)) {
+						hovering = true;
 						grabbedNode = node.uuid;
 						grabXOffset = (node.x - engine.camera.getX()) - engine.mouse.getX();
 						grabYOffset = (node.y - engine.camera.getY()) - engine.mouse.getY();
-						selectedNodes.clear();
+						
+						if (!selectedNodes.contains(grabbedNode)) {
+							selectedNodes.clear();
+							
+							for (Node nodeAgain : nodes) {
+								nodeAgain.multipleSelectMouseOffsetX = 0;
+								nodeAgain.multipleSelectMouseOffsetY = 0;
+							}
+						}
+						else {
+							for (String uuid : selectedNodes) {
+								Node selected = Methods.searchByUUID(nodes, uuid);
+								selected.multipleSelectMouseOffsetX = selected.x - engine.mouse.getX() - engine.camera.getX();
+								selected.multipleSelectMouseOffsetY = selected.y - engine.mouse.getY() - engine.camera.getY();
+							}
+						}
 					}
 						
 					grabbedSomething = true;
 				}
 			}
 			
+			if (!hovering) selectedNodes.clear();
+			
 			//Menu of nodes to grab from at the bottom, detect if leftclicking one and grab one
-			for (DisplayNode node : menuNodes) {
+			for (MenuNode node : menuNodes) {
 				if (node.mouseIsHovering(engine, displayScroll) && grabbedNode.equals("")) {
 					nodes.add(new Node(engine.mouse.getX(), engine.mouse.getY(), node.id, null, null, nodeFont, false));
 					grabbedNode = nodes.get(nodes.size() - 1).uuid;
@@ -707,6 +833,16 @@ public class Main {
 			Node grabbed = Methods.searchNodesByUUID(nodes, grabbedNode);
 			grabbed.x = engine.mouse.getX() + engine.camera.getX() + grabXOffset;
 			grabbed.y = engine.mouse.getY() + engine.camera.getY() + grabYOffset;
+			
+			if (selectedNodes.contains(grabbedNode)) {
+				for (String uuid : selectedNodes) {
+					if (!uuid.equals(grabbedNode)) {
+						Node toMove = Methods.searchByUUID(nodes, uuid);
+						toMove.x = engine.mouse.getX() + engine.camera.getX() + toMove.multipleSelectMouseOffsetX;
+						toMove.y = engine.mouse.getY() + engine.camera.getY() + toMove.multipleSelectMouseOffsetY;
+					}
+				}
+			}
 			grabbed.redrawConnections(nodes, engine);
 		}
 		startedLeft = true;

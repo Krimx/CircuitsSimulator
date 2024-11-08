@@ -218,7 +218,6 @@ public class Methods {
         {
             // set the label to the path of the selected file
             chosenFilePath = fileChooser.getSelectedFile().getAbsolutePath();
-            System.out.println("FilePath: " + chosenFilePath);
         }
 		if (!chosenFilePath.equals("")) {
 			try {
@@ -230,14 +229,13 @@ public class Methods {
 				String[] toOutputs = new String[outputCount];
 				Node toMake = new Node(engine.scrWidth / 2, engine.scrWidth / 2, "custom", toInputs, toOutputs, nodeFont, true);
 				toMake.id = toID;
-				System.out.println(toMake.id);
 				toMake.addInputsAndOutputs(inputCount, outputCount);
 				toMake.customBehavior = reader.nextLine();
 				FontMetrics metrics = engine.scr.getFontMetrics(nodeFont);
 				toMake.w = metrics.stringWidth(toMake.id) + 20;
+				toMake.parseCustomActions();
 
 				nodes.add(toMake);
-				System.out.println(nodes);
 			}
 			catch (Exception e) {
 				e.printStackTrace();

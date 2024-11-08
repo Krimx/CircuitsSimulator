@@ -32,6 +32,8 @@ public class Node {
 	public boolean encoderHigh;
 	public String customBehavior;
 	public boolean custom;
+	public int multipleSelectMouseOffsetX, multipleSelectMouseOffsetY;
+	public ArrayList<String> customActions = new ArrayList<>();
 	
 	public String[] ids = {
 			"and",
@@ -93,6 +95,9 @@ public class Node {
 		
 		this.custom = custom;
 		this.customBehavior = "";
+
+		multipleSelectMouseOffsetX = 0;
+		multipleSelectMouseOffsetY = 0;
 
 		if (this.id.equals("and")) addInputsAndOutputs(2,1);
 		else if (this.id.equals("or")) addInputsAndOutputs(2,1);
@@ -332,7 +337,9 @@ public class Node {
 					}
 				}
 			}
-			catch(Exception e) {}
+			catch(Exception e) {
+				e.printStackTrace();
+			}
 			
 			if (!ranUUIDs.contains(parent.uuid)) {
 				ranUUIDs.add(parent.uuid);
@@ -528,17 +535,26 @@ public class Node {
 	public void drawConnectionLines(Graphics g, Engine engine, Font pointFont, Font nodeFont, Engine.Camera camera, ArrayList<Node> nodes, String grabbedUUID) {
 		Graphics2D g2d = (Graphics2D) g;
 		Stroke origStroke = g2d.getStroke();
+		int darkenFactor = 10;
 		
 		for (int i = 0; i < this.outputs.length; i++) {
 			for (int j = 0; j < this.outputs[i].connections.size(); j++) {
 				Line con = this.outputs[i].connections.get(j);
-				if (con != null) {
+				
+				if (con != null && this.color != null) {
+					int darkenAmount = darkenFactor * (i + 10);
+					
+					if (this.outputs[i].state) g2d.setColor(this.color);
+					else g2d.setColor(new Color(Math.max(this.color.getRed() - darkenAmount, 0), Math.max(this.color.getGreen() - darkenAmount, 0), Math.max(this.color.getBlue() - darkenAmount, 0)));
+				}
+				else {
 					if (this.outputs[i].state) g2d.setColor(Main.onLineColor);
 					else g2d.setColor(Main.offLineColor);
-					g2d.setStroke(new BasicStroke(Main.connectionLineWidth));
-					g2d.drawLine(con.x1 - engine.camera.getX(), con.y1 - engine.camera.getY(), con.x2 - engine.camera.getX(), con.y2 - engine.camera.getY());
-					g2d.setStroke(origStroke);
 				}
+				
+				g2d.setStroke(new BasicStroke(Main.connectionLineWidth));
+				g2d.drawLine(con.x1 - engine.camera.getX(), con.y1 - engine.camera.getY(), con.x2 - engine.camera.getX(), con.y2 - engine.camera.getY());
+				g2d.setStroke(origStroke);
 			}
 		}
 	}
@@ -837,30 +853,11 @@ public class Node {
 			}
 			if (this.custom) {
 				//ArrayLists to store values and a list of actions to take sequentially
-				ArrayList<String> actions = new ArrayList<>();
 				ArrayList<String> vars = new ArrayList<>();
 				ArrayList<Boolean> states = new ArrayList<>();
 				
-				//Iterate through behavior script to gather all actions (actions are defined between {})
-				for (int i = 0; i < customBehavior.length(); i++) {
-					//Find open bracket
-					if (customBehavior.charAt(i) == '{') {
-						//Find position of next closing bracket
-						int endBracket = -1;
-						for (int ii = i; ii < customBehavior.length(); ii++) {
-							if (customBehavior.charAt(ii) == '}') {
-								endBracket = ii;
-								ii = customBehavior.length();
-							}
-						}
-						//Add action between brackets to ArrayList of actions
-						String action = customBehavior.substring(i + 1, endBracket);
-						actions.add(action);
-					}
-				}
-				
 				try {
-					for (String action : actions) {
+					for (String action : this.customActions) {
 						Scanner reader = new Scanner(action);
 						int iter = 0;
 						int assignOutput = -1;
@@ -1003,7 +1000,25 @@ public class Node {
 		}
 	}
 	
-	
+	public void parseCustomActions() {
+		//Iterate through behavior script to gather all actions (actions are defined between {})
+		for (int i = 0; i < customBehavior.length(); i++) {
+			//Find open bracket
+			if (customBehavior.charAt(i) == '{') {
+				//Find position of next closing bracket
+				int endBracket = -1;
+				for (int ii = i; ii < customBehavior.length(); ii++) {
+					if (customBehavior.charAt(ii) == '}') {
+						endBracket = ii;
+						ii = customBehavior.length();
+					}
+				}
+				//Add action between brackets to ArrayList of actions
+				String action = customBehavior.substring(i + 1, endBracket);
+				this.customActions.add(action);
+			}
+		}
+	}
 	
 	
 	

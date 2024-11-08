@@ -7,7 +7,7 @@ import java.awt.Stroke;
 import java.util.ArrayList;
 import java.util.UUID;
 
-public class DisplayNode {
+public class MenuNode {
 	public int x,y,w,h;
 	public String id, uuid;
 	public Color color;
@@ -51,7 +51,7 @@ public class DisplayNode {
 			new Color(230,255,0),
 			new Color(205,249,130)};
 	
-	public DisplayNode(int x, int y, String id, Font nodeFont) {
+	public MenuNode(int x, int y, String id, Font nodeFont) {
 		this.id = id;
 		this.x = x;
 		this.y = y;
@@ -160,17 +160,21 @@ public class DisplayNode {
 		return index;
 	}
 	
-	public void render(Graphics g, Font pointFont, Font nodeFont, int displayScroll) {
+	public void render(Graphics g, Font pointFont, Font nodeFont, int displayScroll, Engine engine) {
 		Graphics2D g2d = (Graphics2D) g;
 		Stroke origStroke = g2d.getStroke();
 		
-		g2d.setColor(this.color);
+		//g2d.setColor(this.color);
+		
+		
+		if (mouseIsHovering(engine, displayScroll)) g2d.setColor(Main.menuNodeHoveringColor);
+		else g2d.setColor(Main.menuNodeColor);
 		
 		g2d.fillRoundRect(x - (this.w / 2) - displayScroll, y - (this.h / 2), w, h, Math.min(w, h) / Main.nodeCornerArc, Math.min(w, h) / Main.nodeCornerArc);
 		g2d.setColor(Color.black);
 		g2d.setStroke(new BasicStroke(Main.nodeOutlineWidth));
-		g2d.drawRoundRect(x - (this.w / 2) - displayScroll, y - (this.h / 2), w, h, Math.min(w, h) / Main.nodeCornerArc, Math.min(w, h) / Main.nodeCornerArc);
-		g2d.setStroke(origStroke);
+		//g2d.drawRoundRect(x - (this.w / 2) - displayScroll, y - (this.h / 2), w, h, Math.min(w, h) / Main.nodeCornerArc, Math.min(w, h) / Main.nodeCornerArc);
+		//g2d.setStroke(origStroke);
 		
 		g2d.setColor(Color.black);
 		g2d.setFont(nodeFont);

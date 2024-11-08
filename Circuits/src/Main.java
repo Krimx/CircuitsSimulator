@@ -549,7 +549,6 @@ public class Main {
 				Node toMake = new Node(x,y,id,toInputs, toOutputs, nodeFont, !customBehavior.equals(""));
 				toMake.uuid = uuid;
 				toMake.decoderAmount = decoderAmount;
-				toMake.h = h;
 				
 				toMake.customBehavior = customBehavior;
 				toMake.parseCustomActions();

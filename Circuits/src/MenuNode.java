@@ -32,6 +32,7 @@ public class MenuNode {
 			"decoder",
 			"encoder",
 			"mux",
+			"register",
 			"custom"};
 	public Color[] cols = {
 			new Color(53,205,159),
@@ -49,6 +50,7 @@ public class MenuNode {
 			new Color(251,255,104),
 			new Color(195,249,204),
 			new Color(230,255,0),
+			new Color(182,178,220),
 			new Color(205,249,130)};
 	
 	public MenuNode(int x, int y, String id, Font nodeFont) {
@@ -76,6 +78,7 @@ public class MenuNode {
 		else if (this.id.equals("decoder")) this.w = 90;
 		else if (this.id.equals("encoder")) this.w = 90;
 		else if (this.id.equals("mux")) this.w = 60;
+		else if (this.id.equals("register")) this.w = 85;
 		else if (this.id.equals("custom")) this.w = 90;
 		else this.w = 100;
 		

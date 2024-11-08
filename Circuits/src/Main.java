@@ -187,7 +187,7 @@ public class Main {
 		
 		engine.frame.setVisible(true);
 		
-		String[] menuNodesToAdd = {"switch", "light", "and", "or", "not", "xor", "nand", "nor", "xnor", "4BitNumber", "4BitDisplay", "4BitAdder", "decoder", "encoder", "mux"};
+		String[] menuNodesToAdd = {"switch", "light", "and", "or", "not", "xor", "nand", "nor", "xnor", "4BitNumber", "4BitDisplay", "4BitAdder", "decoder", "encoder", "mux", "register"};
 		
 		int nextX = 0;
 		for (int i = 0; i < menuNodesToAdd.length; i++) {
@@ -199,7 +199,9 @@ public class Main {
 		try {
 			engine.run();
 		}
-		catch(Exception e) {}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public static void addMenuNode(String id, int x) {
@@ -218,7 +220,7 @@ public class Main {
 		boolean aNodeIsOnScreen = false;
 		
 		for (int i = 0; i < nodes.size(); i++) {
-			if (nodes.get(i).render(g, engine, pointFont, nodeFont, engine.camera, nodes, grabbedUUID, selectedNodes)) aNodeIsOnScreen = true;
+			if (nodes.get(i).render(g, engine, pointFont, nodeFont, nodes, grabbedUUID, selectedNodes)) aNodeIsOnScreen = true;
 			if (nodes.get(i).mouseIsHovering(engine)) {
 				hovering = true;
 				if (engine.keys.K_CONTROL()) {
@@ -308,7 +310,6 @@ public class Main {
 					rightClickedUUID = node.uuid;
 				}
 			}
-			hoveringOverNode = true;
 			if (hoveringOverNode) {
 				rightClickMenu.setLocation(new Point(engine.mouse.getX(), engine.mouse.getY() + 30));
 				rightClickMenu.setVisible(true);

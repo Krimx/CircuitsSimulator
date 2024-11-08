@@ -1,8 +1,10 @@
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Polygon;
 import java.awt.Stroke;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -34,6 +36,8 @@ public class Node {
 	public boolean custom;
 	public int multipleSelectMouseOffsetX, multipleSelectMouseOffsetY;
 	public ArrayList<String> customActions = new ArrayList<>();
+	public boolean lastClockHigh, currentClockHigh;
+	public boolean[] registerStore = new boolean[4];
 	
 	public String[] ids = {
 			"and",
@@ -51,6 +55,7 @@ public class Node {
 			"decoder",
 			"encoder",
 			"mux",
+			"register",
 			"custom"};
 	public Color[] cols = {
 			new Color(53,205,159),
@@ -68,6 +73,7 @@ public class Node {
 			new Color(251,255,104),
 			new Color(195,249,204),
 			new Color(230,255,0),
+			new Color(182,178,220),
 			new Color(205,249,130)};
 	
 	public Node() {
@@ -95,6 +101,9 @@ public class Node {
 		
 		this.custom = custom;
 		this.customBehavior = "";
+		
+		this.lastClockHigh = false;
+		this.currentClockHigh = false;
 
 		multipleSelectMouseOffsetX = 0;
 		multipleSelectMouseOffsetY = 0;
@@ -111,10 +120,10 @@ public class Node {
 		else if (this.id.equals("4BitNumber")) {
 			this.inputs = new Input[0];
 			this.outputs = new Output[4];
-			this.outputs[0] = new Output("A1", this.uuid);
-			this.outputs[1] = new Output("A2", this.uuid);
-			this.outputs[2] = new Output("A3", this.uuid);
-			this.outputs[3] = new Output("A4", this.uuid);
+			this.outputs[0] = new Output("A0", this.uuid);
+			this.outputs[1] = new Output("A1", this.uuid);
+			this.outputs[2] = new Output("A2", this.uuid);
+			this.outputs[3] = new Output("A3", this.uuid);
 			
 			this.pausePanning = true;
 		}
@@ -122,13 +131,13 @@ public class Node {
 			this.inputs = new Input[9];
 			this.outputs = new Output[5];
 
-			this.inputs[0] = new Input("A1", this.uuid);
-			this.inputs[1] = new Input("A2", this.uuid);
-			this.inputs[2] = new Input("A3", this.uuid);
-			this.inputs[3] = new Input("A4", this.uuid);
-			this.inputs[4] = new Input("B1", this.uuid);
-			this.inputs[5] = new Input("B2", this.uuid);
-			this.inputs[6] = new Input("B3", this.uuid);
+			this.inputs[0] = new Input("A0", this.uuid);
+			this.inputs[1] = new Input("A1", this.uuid);
+			this.inputs[2] = new Input("A2", this.uuid);
+			this.inputs[3] = new Input("A3", this.uuid);
+			this.inputs[4] = new Input("B0", this.uuid);
+			this.inputs[5] = new Input("B1", this.uuid);
+			this.inputs[6] = new Input("B2", this.uuid);
 			this.inputs[7] = new Input("B4", this.uuid);
 			this.inputs[8] = new Input("subtract", this.uuid);
 
@@ -142,10 +151,10 @@ public class Node {
 			this.inputs = new Input[4];
 			this.outputs = new Output[0];
 
-			this.inputs[0] = new Input("A1", this.uuid);
-			this.inputs[1] = new Input("A2", this.uuid);
-			this.inputs[2] = new Input("A3", this.uuid);
-			this.inputs[3] = new Input("A4", this.uuid);
+			this.inputs[0] = new Input("A0", this.uuid);
+			this.inputs[1] = new Input("A1", this.uuid);
+			this.inputs[2] = new Input("A2", this.uuid);
+			this.inputs[3] = new Input("A3", this.uuid);
 		}
 		else if (this.id.equals("decoder")) {
 			this.inputs = new Input[2];
@@ -182,6 +191,22 @@ public class Node {
 
 			this.outputs[0] = new Output("B0", this.uuid);
 		}
+		else if (this.id.equals("register")) {
+			this.inputs = new Input[6];
+			this.outputs = new Output[4];
+
+			this.inputs[0] = new Input("D0", this.uuid);
+			this.inputs[1] = new Input("D1", this.uuid);
+			this.inputs[2] = new Input("D2", this.uuid);
+			this.inputs[3] = new Input("D3", this.uuid);
+			this.inputs[4] = new Input("Store", this.uuid);
+			this.inputs[5] = new Input("Clock", this.uuid);
+
+			this.outputs[0] = new Output("Q0", this.uuid);
+			this.outputs[1] = new Output("Q1", this.uuid);
+			this.outputs[2] = new Output("Q2", this.uuid);
+			this.outputs[3] = new Output("Q3", this.uuid);
+		}
 		else if (this.id.equals("custom")) {
 			addInputsAndOutputs(inputs.length, outputs.length);
 		}
@@ -209,12 +234,22 @@ public class Node {
 		else if (this.id.equals("nand")) this.w = 65;
 		else if (this.id.equals("nor")) this.w = 50;
 		else if (this.id.equals("xnor")) this.w = 55;
-		else if (this.id.equals("4BitNumber")) this.w = 100;
+		else if (this.id.equals("4BitNumber")) {
+			this.w = 130;
+			this.h = 140;
+		}
 		else if (this.id.equals("4BitAdder")) this.w = 115;
-		else if (this.id.equals("4BitDisplay")) this.w = 115;
+		else if (this.id.equals("4BitDisplay")) {
+			this.w = 130;
+			this.h = 140;
+		}
 		else if (this.id.equals("decoder")) this.w = 135;
 		else if (this.id.equals("encoder")) this.w = 135;
 		else if (this.id.equals("mux")) this.w = 60;
+		else if (this.id.equals("register")) {
+			this.w = 90;
+			this.h = 140;
+		}
 		else if (this.id.equals("custom")) this.w = 90;
 		else this.w = 100;
 		
@@ -302,7 +337,9 @@ public class Node {
 				}
 				
 			}
-			catch(Exception e) {}
+			catch(Exception e) {
+				e.printStackTrace();
+			}
 		}
 		
 		public void createConnection(String toUUID, Engine engine, ArrayList<Node> nodes, ArrayList<String> ranUUIDs) {
@@ -404,7 +441,7 @@ public class Node {
 		}
 	}
 	
-	public boolean render(Graphics g, Engine engine, Font pointFont, Font nodeFont, Engine.Camera camera, ArrayList<Node> nodes, String grabbedUUID, ArrayList<String> selectedNodes) {
+	public boolean render(Graphics g, Engine engine, Font pointFont, Font nodeFont, ArrayList<Node> nodes, String grabbedUUID, ArrayList<String> selectedNodes) {
 		boolean inScreen = false;
 		Graphics2D g2d = (Graphics2D) g;
 		Stroke origStroke = g2d.getStroke();
@@ -424,8 +461,8 @@ public class Node {
 			this.h = (Math.max(this.inputs.length, this.outputs.length) * yGap) + yOffset;
 		}
 		
-		int centerX = x - camera.getX();
-		int centerY = y - camera.getY();
+		int centerX = x - engine.camera.getX();
+		int centerY = y - engine.camera.getY();
 		
 		//g2d.fillRect(x - (this.w / 2) - camera.getX(), y - (this.h / 2) - camera.getY(), w, h);
 		g2d.fillRoundRect(centerX - (this.w / 2), centerY - (this.h / 2), w, h, Math.min(w, h) / Main.nodeCornerArc, Math.min(w, h) / Main.nodeCornerArc);
@@ -437,30 +474,38 @@ public class Node {
 		g2d.drawRoundRect(centerX - (this.w / 2), centerY - (this.h / 2), w, h, Math.min(w, h) / Main.nodeCornerArc, Math.min(w, h) / Main.nodeCornerArc);
 		g2d.setStroke(origStroke);
 		
-		
+		FontMetrics metrics = g.getFontMetrics(nodeFont);
 		
 		if (this.id.equals("4BitNumber")) {
 			g.setFont(nodeFont);
 			g.setColor(Color.black);
-			g.drawString(String.valueOf(this.value), this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY());
+			g.drawString(this.id, this.x - (this.w / 2) + 10 - engine.camera.getX(), this.y - (this.h / 2) + metrics.getHeight() + 2);
+			draw7SegmentOnNode(g, this.value, metrics.getHeight(), engine);
 		}
 		else if (this.id.equals("4BitDisplay")) {
 			g.setFont(nodeFont);
 			g.setColor(Color.black);
-			g.drawString(String.valueOf(this.value), this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY());
+			g.drawString(this.id, this.x - (this.w / 2) + 10 - engine.camera.getX(), this.y - (this.h / 2) + metrics.getHeight() + 2);
+			draw7SegmentOnNode(g, this.value, metrics.getHeight(), engine);
 		}
 		else if (this.id.equals("decoder")) {
 			g.setFont(nodeFont);
 			g.setColor(Color.black);
-			g.drawString(String.valueOf(this.inputs.length) + "-" + String.valueOf(this.outputs.length) + " decoder", this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY());
+			g.drawString(String.valueOf(this.inputs.length) + "-" + String.valueOf(this.outputs.length) + " decoder", this.x - (this.w / 2) + 10 - engine.camera.getX(), this.y + 8 - engine.camera.getY());
+		}
+		else if (this.id.equals("register")) {
+			g.setFont(nodeFont);
+			g.setColor(Color.black);
+			g.drawString(this.id, this.x - (this.w / 2) + 10 - engine.camera.getX(), this.y - (this.h / 2) + metrics.getHeight() + 2);
+			draw7SegmentOnNode(g, this.value, metrics.getHeight(), engine);
 		}
 		else {
 			g2d.setColor(Color.black);
 			g2d.setFont(nodeFont);
-			g2d.drawString(this.id, this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY());
+			g2d.drawString(this.id, this.x - (this.w / 2) + 10 - engine.camera.getX(), this.y + 8 - engine.camera.getY());
 			if (this.id.equals("encoder")) {
 				String highOrLow = (this.encoderHigh) ? "(High)" : "(Low)";
-				g2d.drawString(highOrLow, this.x - (this.w / 2) + 10 - camera.getX(), this.y + 8 - camera.getY() + 20);
+				g2d.drawString(highOrLow, this.x - (this.w / 2) + 10 - engine.camera.getX(), this.y + 8 - engine.camera.getY() + 20);
 			}
 		}
 		
@@ -469,8 +514,8 @@ public class Node {
 		for (int i = 0; i < this.inputs.length; i++) {
 			//Gathering render positions
 			int rad = this.pointRad;
-			int toY = this.y + (this.yOffset + (this.yOffset / 2)) + (i * this.yGap) - (this.h / 2) - camera.getY();
-			int toX = this.x - (this.w / 2) - camera.getX();
+			int toY = this.y + (this.yOffset + (this.yOffset / 2)) + (i * this.yGap) - (this.h / 2) - engine.camera.getY();
+			int toX = this.x - (this.w / 2) - engine.camera.getX();
 			this.inputs[i].trueX = toX;
 			this.inputs[i].trueY = toY;
 			
@@ -500,8 +545,8 @@ public class Node {
 		
 		for (int i = 0; i < this.outputs.length; i++) {
 			int rad = this.pointRad;
-			int toY = this.y + (this.yOffset + (this.yOffset / 2)) + (i * this.yGap) - (this.h / 2) - camera.getY();
-			int toX = this.x + (this.w / 2) - camera.getX();
+			int toY = this.y + (this.yOffset + (this.yOffset / 2)) + (i * this.yGap) - (this.h / 2) - engine.camera.getY();
+			int toX = this.x + (this.w / 2) - engine.camera.getX();
 			this.outputs[i].trueX = toX;
 			this.outputs[i].trueY = toY;
 			
@@ -697,6 +742,16 @@ public class Node {
 				}
 			}
 		}
+		
+		if (this.id.equals("register")) {
+			String bits = "";
+			for (int i = 0; i < 4; i++) {
+				if (this.registerStore[i]) bits += "1";
+				else bits += "0";
+			}
+			
+			this.value = Methods.binaryToInt(bits);
+		}
 	}
 	
 	public boolean mouseIsHovering(Engine engine) {
@@ -851,126 +906,25 @@ public class Node {
 					}
 				}
 			}
-			if (this.custom) {
-				//ArrayLists to store values and a list of actions to take sequentially
-				ArrayList<String> vars = new ArrayList<>();
-				ArrayList<Boolean> states = new ArrayList<>();
+			if (this.id.equals("register")) {
+				this.currentClockHigh = this.inputs[5].state;
 				
-				try {
-					for (String action : this.customActions) {
-						Scanner reader = new Scanner(action);
-						int iter = 0;
-						int assignOutput = -1;
-						String assignOutputString = "";
-						String assignmentOperator = "";
-						String operand1 = "", operand2 = "", operation = "";
-						boolean output = false;
-						int operand1Index = -1, operand2Index = -1;
-						
-						while (reader.hasNext()) {
-							if (iter == 0) {
-								String assignment = reader.next();
-								iter++;
-								
-								if (Methods.isInteger(assignment)) {
-									assignOutput = Integer.parseInt(assignment);
-								}
-								else {
-									 if (!vars.contains(assignment)) {
-										 assignOutputString = assignment;
-										 vars.add(assignment);
-										 states.add(false);
-									 }
-								}
-							}
-							else if (iter == 1) {
-								assignmentOperator = reader.next();
-								iter++;
-							}
-							else if (iter == 2) {
-								operand1 = reader.next();
-								iter++;
-							}
-							else if (iter == 3) {
-								operation = reader.next();
-								iter++;
-							}
-							else if (iter == 4) {
-								operand2 = reader.next();
-								iter++;
-							}
-						}
+				if (this.currentClockHigh && !this.lastClockHigh && this.inputs[4].state) {
+					this.registerStore[0] = this.inputs[0].state;
+					this.registerStore[1] = this.inputs[1].state;
+					this.registerStore[2] = this.inputs[2].state;
+					this.registerStore[3] = this.inputs[3].state;
+				}
 
-						if (Methods.isInteger(operand1)) operand1Index = Integer.parseInt(operand1);
-						if (Methods.isInteger(operand2)) operand2Index = Integer.parseInt(operand2);
-						
-						if (iter > 3) {
-							if (operand1Index >= 0 && operand2Index >= 0) {
-								if (operation.equals("&&")) {
-									output = this.inputs[operand1Index].state && this.inputs[operand2Index].state;
-								}
-								else if (operation.equals("||")) {
-									output = this.inputs[operand1Index].state || this.inputs[operand2Index].state;
-								}
-								else if (operation.equals("^^")) {
-									output = this.inputs[operand1Index].state ^ this.inputs[operand2Index].state;
-								}
-							}
-							if (operand1Index >= 0 && operand2Index < 0) {
-								if (operation.equals("&&")) {
-									output = this.inputs[operand1Index].state && states.get(vars.indexOf(operand2));
-								}
-								else if (operation.equals("||")) {
-									output = this.inputs[operand1Index].state || states.get(vars.indexOf(operand2));
-								}
-								else if (operation.equals("^^")) {
-									output = this.inputs[operand1Index].state ^ states.get(vars.indexOf(operand2));
-								}
-							}
-							if (operand1Index < 0 && operand2Index >= 0) {
-								if (operation.equals("&&")) {
-									output = states.get(vars.indexOf(operand1)) && this.inputs[operand2Index].state;
-								}
-								else if (operation.equals("||")) {
-									output = states.get(vars.indexOf(operand1)) || this.inputs[operand2Index].state;
-								}
-								else if (operation.equals("^^")) {
-									output = states.get(vars.indexOf(operand1)) ^ this.inputs[operand2Index].state;
-								}
-							}
-							else if (operand1Index < 0 && operand2Index < 0){
-								if (operation.equals("&&")) {
-									output = states.get(vars.indexOf(operand1)) && states.get(vars.indexOf(operand2));
-								}
-								else if (operation.equals("||")) {
-									output = states.get(vars.indexOf(operand1)) || states.get(vars.indexOf(operand2));
-								}
-								else if (operation.equals("^^")) {
-									output = states.get(vars.indexOf(operand1)) ^ states.get(vars.indexOf(operand2));
-								}
-							}
-						}
-						else {
-							if (operand1Index < 0) {
-								output = states.get(vars.indexOf(operand1));
-							}
-							else {
-								output = this.inputs[operand1Index].state;
-							}
-						}
-						
-						
-						if (assignOutput < 0) {
-							states.set(vars.indexOf(assignOutputString), assignmentOperator.equals("=!") ? !output: output);
-						}
-						else {
-							this.outputs[assignOutput].state = assignmentOperator.equals("=!") ? !output: output;
-						}
-					}
-				}
-				catch (Exception e) {
-					e.printStackTrace();
-				}
+				this.outputs[0].state = this.registerStore[0];
+				this.outputs[1].state = this.registerStore[1];
+				this.outputs[2].state = this.registerStore[2];
+				this.outputs[3].state = this.registerStore[3];
+				
+				this.lastClockHigh = this.inputs[5].state;
+			}
+			if (this.custom) {
+				doCustomActions();
 				
 			}
 			
@@ -1020,8 +974,204 @@ public class Node {
 		}
 	}
 	
+	public void doCustomActions() {
+		ArrayList<String> vars = new ArrayList<>();
+		ArrayList<Boolean> states = new ArrayList<>();
+		
+		try {
+			for (String action : this.customActions) {
+				Scanner reader = new Scanner(action);
+				int iter = 0;
+				int assignOutput = -1;
+				String assignOutputString = "";
+				String assignmentOperator = "";
+				String operand1 = "", operand2 = "", operation = "";
+				boolean output = false;
+				int operand1Index = -1, operand2Index = -1;
+				
+				while (reader.hasNext()) {
+					if (iter == 0) {
+						String assignment = reader.next();
+						iter++;
+						
+						if (Methods.isInteger(assignment)) {
+							assignOutput = Integer.parseInt(assignment);
+						}
+						else {
+							 if (!vars.contains(assignment)) {
+								 assignOutputString = assignment;
+								 vars.add(assignment);
+								 states.add(false);
+							 }
+						}
+					}
+					else if (iter == 1) {
+						assignmentOperator = reader.next();
+						iter++;
+					}
+					else if (iter == 2) {
+						operand1 = reader.next();
+						iter++;
+					}
+					else if (iter == 3) {
+						operation = reader.next();
+						iter++;
+					}
+					else if (iter == 4) {
+						operand2 = reader.next();
+						iter++;
+					}
+				}
+
+				if (Methods.isInteger(operand1)) operand1Index = Integer.parseInt(operand1);
+				if (Methods.isInteger(operand2)) operand2Index = Integer.parseInt(operand2);
+				
+				if (iter > 3) {
+					if (operand1Index >= 0 && operand2Index >= 0) {
+						if (operation.equals("&&")) {
+							output = this.inputs[operand1Index].state && this.inputs[operand2Index].state;
+						}
+						else if (operation.equals("||")) {
+							output = this.inputs[operand1Index].state || this.inputs[operand2Index].state;
+						}
+						else if (operation.equals("^^")) {
+							output = this.inputs[operand1Index].state ^ this.inputs[operand2Index].state;
+						}
+					}
+					if (operand1Index >= 0 && operand2Index < 0) {
+						if (operation.equals("&&")) {
+							output = this.inputs[operand1Index].state && states.get(vars.indexOf(operand2));
+						}
+						else if (operation.equals("||")) {
+							output = this.inputs[operand1Index].state || states.get(vars.indexOf(operand2));
+						}
+						else if (operation.equals("^^")) {
+							output = this.inputs[operand1Index].state ^ states.get(vars.indexOf(operand2));
+						}
+					}
+					if (operand1Index < 0 && operand2Index >= 0) {
+						if (operation.equals("&&")) {
+							output = states.get(vars.indexOf(operand1)) && this.inputs[operand2Index].state;
+						}
+						else if (operation.equals("||")) {
+							output = states.get(vars.indexOf(operand1)) || this.inputs[operand2Index].state;
+						}
+						else if (operation.equals("^^")) {
+							output = states.get(vars.indexOf(operand1)) ^ this.inputs[operand2Index].state;
+						}
+					}
+					else if (operand1Index < 0 && operand2Index < 0){
+						if (operation.equals("&&")) {
+							output = states.get(vars.indexOf(operand1)) && states.get(vars.indexOf(operand2));
+						}
+						else if (operation.equals("||")) {
+							output = states.get(vars.indexOf(operand1)) || states.get(vars.indexOf(operand2));
+						}
+						else if (operation.equals("^^")) {
+							output = states.get(vars.indexOf(operand1)) ^ states.get(vars.indexOf(operand2));
+						}
+					}
+				}
+				else {
+					if (operand1Index < 0) {
+						output = states.get(vars.indexOf(operand1));
+					}
+					else {
+						output = this.inputs[operand1Index].state;
+					}
+				}
+				
+				
+				if (assignOutput < 0) {
+					states.set(vars.indexOf(assignOutputString), assignmentOperator.equals("=!") ? !output: output);
+				}
+				else {
+					this.outputs[assignOutput].state = assignmentOperator.equals("=!") ? !output: output;
+				}
+			}
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 	
-	
-	
+	public void draw7SegmentOnNode(Graphics g, int value, int fontHeight, Engine engine) {
+		int displayWidth = 70;
+		int displayHeight = 100;
+		int displayMargin = 5;
+		int segmentWidth = 6;
+		int segmentMargin = 1;
+		int verticalSegmentHeight = (int) (displayHeight * 0.55) - (3 * segmentWidth) - (4 * segmentMargin);
+		int leftOfDisplay = this.x - (this.w / 2) - engine.camera.getX() + ((this.w - displayWidth) / 2);
+		int topOfDisplay = this.y - (this.h / 2) - engine.camera.getY() + fontHeight + 15;
+		int ones = this.value % 10;
+		int tens = this.value / 10;
+		int tensSpace = 10;
+		int pointLength = segmentWidth / 2;
+		g.setColor(Color.black);
+		g.fillRect(leftOfDisplay, topOfDisplay, displayWidth, displayHeight);
+		/*
+		 *  --0--
+		 * |     | 
+		 * 1     2
+		 * |     |
+		 *  --3--
+		 * |     |
+		 * 4     5
+		 * |     |
+		 *  --6--
+		 */
+		boolean[] segments = {false, false, false, false, false, false, false};
+
+		if (ones == 2 || ones == 3 || ones == 5 || ones == 6 || ones == 7 || ones == 8 || ones == 9 || ones == 0) segments[0] = true;
+		if (ones == 4 || ones == 5 || ones == 6 || ones == 8 || ones == 9 || ones == 0) segments[1] = true;
+		if (ones == 1 || ones == 2 || ones == 3 || ones == 4 || ones == 7 || ones == 8 || ones == 9 || ones == 0) segments[2] = true;
+		if (ones == 2 || ones == 3 || ones == 4 || ones == 5 || ones == 6 || ones == 8 || ones == 9) segments[3] = true;
+		if (ones == 2 || ones == 6 || ones == 8 || ones == 0) segments[4] = true;
+		if (ones == 1 || ones == 3 || ones == 4 || ones == 5 || ones == 6 || ones == 7 || ones == 8 || ones == 9 || ones == 0) segments[5] = true;
+		if (ones == 2 || ones == 3 || ones == 5 || ones == 6 || ones == 8 || ones == 9 || ones == 0) segments[6] = true;
+		
+		g.setColor(Color.red);
+		int horizontalLength = displayWidth - (2 * displayMargin) - tensSpace;
+		int horizontalBarX1 = leftOfDisplay + displayMargin + tensSpace;
+		int horizontalBarX2 = horizontalBarX1 + 2 * pointLength;
+		int horizontalBarX3 = horizontalBarX1 + horizontalLength - 2 * pointLength;
+		int horizontalBarX4 = horizontalBarX1 + horizontalLength;
+		
+		int horizontalBarY1 = topOfDisplay + displayMargin;
+		int horizontalBarY2 = topOfDisplay + displayMargin + (segmentWidth / 2);
+		int horizontalBarY3 = topOfDisplay + displayMargin + segmentWidth;
+		
+		int middleBarOffset = segmentWidth + verticalSegmentHeight + (2 * segmentMargin);
+		int bottomBarOffset = (2 * segmentWidth) + (2 * verticalSegmentHeight) + (4 * segmentMargin);
+		int[] horizontalXSet = {horizontalBarX1,horizontalBarX2,horizontalBarX3,horizontalBarX4,horizontalBarX3,horizontalBarX2};
+		int[] verticalLeftXSet = {horizontalBarX1, horizontalBarX2, horizontalBarX2, horizontalBarX1};
+		int[] verticalRightXSet = {horizontalBarX4, horizontalBarX3, horizontalBarX3, horizontalBarX4};
+		
+		//Second and fifth are usable for third and sixth
+		int[] firstYSet = {horizontalBarY2, horizontalBarY1, horizontalBarY1, horizontalBarY2, horizontalBarY3, horizontalBarY3};
+		int[] secondYSet = {horizontalBarY2 + segmentMargin, horizontalBarY3 + segmentMargin, horizontalBarY1 + middleBarOffset - segmentMargin, horizontalBarY2 + middleBarOffset - segmentMargin};
+		int[] fourthYSet = {horizontalBarY2 + middleBarOffset, horizontalBarY1 + middleBarOffset, horizontalBarY1 + middleBarOffset, horizontalBarY2 + middleBarOffset, horizontalBarY3 + middleBarOffset, horizontalBarY3 + middleBarOffset};
+		int[] fifthYSet = {horizontalBarY2 + segmentMargin + middleBarOffset, horizontalBarY3 + segmentMargin + middleBarOffset, horizontalBarY1 + 2 * middleBarOffset - segmentMargin, horizontalBarY2 + 2 * middleBarOffset - segmentMargin};
+		int[] seventhYSet = {horizontalBarY2 + bottomBarOffset, horizontalBarY1 + bottomBarOffset, horizontalBarY1 + bottomBarOffset, horizontalBarY2 + bottomBarOffset, horizontalBarY3 + bottomBarOffset, horizontalBarY3 + bottomBarOffset};
+		
+		System.out.println(horizontalBarX1 + ", " + horizontalBarX2 + ", " + horizontalBarX3 + ", " + horizontalBarX4);
+		
+		if (segments[0]) g.fillPolygon(new Polygon(horizontalXSet, firstYSet, 6));
+		//if (segments[0]) g.fillRect(leftOfDisplay + displayMargin + tensSpace, topOfDisplay + displayMargin, displayWidth - (2 * displayMargin) - tensSpace, segmentWidth);
+		if (segments[1]) g.fillPolygon(new Polygon(verticalLeftXSet, secondYSet, 4));
+		if (segments[2]) g.fillPolygon(new Polygon(verticalRightXSet, secondYSet, 4));
+		if (segments[3]) g.fillPolygon(new Polygon(horizontalXSet, fourthYSet, 6));
+		if (segments[4]) g.fillPolygon(new Polygon(verticalLeftXSet, fifthYSet, 4));
+		if (segments[5]) g.fillPolygon(new Polygon(verticalRightXSet, fifthYSet, 4));
+		if (segments[6]) g.fillPolygon(new Polygon(horizontalXSet, seventhYSet, 6));
+		
+		if (tens == 1) {
+			int tensOffset = horizontalLength + 3 * segmentMargin;
+			int[] tensPlaceXSet = {horizontalBarX4 - tensOffset, horizontalBarX3 - tensOffset, horizontalBarX3 - tensOffset, horizontalBarX4 - tensOffset};
+			g.fillPolygon(new Polygon(tensPlaceXSet, secondYSet, 4));
+			g.fillPolygon(new Polygon(tensPlaceXSet, fifthYSet, 4));
+		}
+	}
 	
 }

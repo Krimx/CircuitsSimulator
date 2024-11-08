@@ -1,0 +1,137 @@
+{
+switch
+129
+234
+597c3c12-0ef2-4c26-9e69-68c7ef22be20
+2
+30
+
+output:
+output 3a8088ea-3c55-43cd-a18d-6510d17fa702 done
+}
+{
+switch
+126
+274
+c3103708-60e8-4bd6-9c99-29f91c7476a3
+2
+30
+
+output:
+output 30b64b5f-23c8-4506-a966-57f783d598a1 done
+}
+{
+switch
+125
+311
+77c11e75-7110-43ce-807e-2404051ded6a
+2
+30
+
+output:
+output 0abd0996-8775-404a-aba2-4833534f81e3 done
+}
+{
+xor
+268
+237
+82af47ee-2fed-4a91-9c4a-060eff9d1b4d
+2
+50
+
+input:
+input bb31e46d-7c1b-4c82-b0db-306957eafefc
+input 75d91ccb-655c-4cfc-80cf-68b415e64fb5 done
+output:
+output c8c4d250-f91a-4335-b1e3-9fd50859e9a7 done
+}
+{
+and
+266
+296
+37982a81-80c1-472e-bffd-400b7b380b84
+2
+50
+
+input:
+input 3a532e0d-da46-47f0-9e83-52ddcf850fd3
+input d1f040d1-5c29-4aa1-96cd-2a1d61ceacaa done
+output:
+output 5e7bf7e9-353f-4bb8-a9fa-fc6833e753fc done
+}
+{
+xor
+379
+240
+d69d750f-53d9-4b6d-b487-77a8a597177d
+2
+50
+
+input:
+input 2c0e5a53-9aa4-4a3f-82ef-10be5091005a
+input 530790cb-8d1f-4e19-bb4a-e5d5d7ccd005 done
+output:
+output d5e41e2d-d464-4873-a88c-3598603530f6 done
+}
+{
+and
+381
+299
+680ccd3e-8653-49d3-af42-309bebcbc077
+2
+50
+
+input:
+input 86fe2610-3097-47cf-beed-124243a883fc
+input 5f79a303-b227-40ea-93d1-fc5f3a5ec777 done
+output:
+output a2dad637-ba7f-4d2d-b5b9-ed0b59c3b0d6 done
+}
+{
+or
+476
+309
+6d1ecf08-84f4-4a1f-957d-a002e59162da
+2
+50
+
+input:
+input 2fe4b093-7833-4ffe-80be-d748b0312f3f
+input 3d5c7a52-a1c4-48ee-9568-9c217fd87344 done
+output:
+output 68660567-e998-4e1a-878d-a897aeaf5033 done
+}
+{
+light
+579
+231
+df7e66cb-fb26-4c04-9777-5d8886ca7784
+2
+30
+
+input:
+input 27799b10-e22d-4cc3-b173-b280a9c76f92 done
+}
+{
+light
+579
+291
+e9d132e5-bc08-443a-88ca-5743920312b5
+2
+30
+
+input:
+input d55d7df4-1936-406b-86d4-2b37d8be511f done
+}
+con: 3a8088ea-3c55-43cd-a18d-6510d17fa702 bb31e46d-7c1b-4c82-b0db-306957eafefc
+con: 3a8088ea-3c55-43cd-a18d-6510d17fa702 3a532e0d-da46-47f0-9e83-52ddcf850fd3
+con: 30b64b5f-23c8-4506-a966-57f783d598a1 75d91ccb-655c-4cfc-80cf-68b415e64fb5
+con: 30b64b5f-23c8-4506-a966-57f783d598a1 d1f040d1-5c29-4aa1-96cd-2a1d61ceacaa
+con: 0abd0996-8775-404a-aba2-4833534f81e3 530790cb-8d1f-4e19-bb4a-e5d5d7ccd005
+con: 0abd0996-8775-404a-aba2-4833534f81e3 5f79a303-b227-40ea-93d1-fc5f3a5ec777
+con: c8c4d250-f91a-4335-b1e3-9fd50859e9a7 2c0e5a53-9aa4-4a3f-82ef-10be5091005a
+con: c8c4d250-f91a-4335-b1e3-9fd50859e9a7 86fe2610-3097-47cf-beed-124243a883fc
+con: 5e7bf7e9-353f-4bb8-a9fa-fc6833e753fc 3d5c7a52-a1c4-48ee-9568-9c217fd87344
+con: d5e41e2d-d464-4873-a88c-3598603530f6 27799b10-e22d-4cc3-b173-b280a9c76f92
+con: a2dad637-ba7f-4d2d-b5b9-ed0b59c3b0d6 2fe4b093-7833-4ffe-80be-d748b0312f3f
+con: 68660567-e998-4e1a-878d-a897aeaf5033 d55d7df4-1936-406b-86d4-2b37d8be511f

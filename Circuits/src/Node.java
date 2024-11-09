@@ -1155,7 +1155,6 @@ public class Node {
 		int[] fifthYSet = {horizontalBarY2 + segmentMargin + middleBarOffset, horizontalBarY3 + segmentMargin + middleBarOffset, horizontalBarY1 + 2 * middleBarOffset - segmentMargin, horizontalBarY2 + 2 * middleBarOffset - segmentMargin};
 		int[] seventhYSet = {horizontalBarY2 + bottomBarOffset, horizontalBarY1 + bottomBarOffset, horizontalBarY1 + bottomBarOffset, horizontalBarY2 + bottomBarOffset, horizontalBarY3 + bottomBarOffset, horizontalBarY3 + bottomBarOffset};
 		
-		System.out.println(horizontalBarX1 + ", " + horizontalBarX2 + ", " + horizontalBarX3 + ", " + horizontalBarX4);
 		
 		if (segments[0]) g.fillPolygon(new Polygon(horizontalXSet, firstYSet, 6));
 		//if (segments[0]) g.fillRect(leftOfDisplay + displayMargin + tensSpace, topOfDisplay + displayMargin, displayWidth - (2 * displayMargin) - tensSpace, segmentWidth);

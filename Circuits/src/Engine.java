@@ -20,6 +20,7 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 class Screen extends JPanel {
 	private static final long serialVersionUID = 1L;
@@ -145,6 +146,8 @@ public class Engine {
 	}
 	
 	public void initializeJFrame(int screen_width, int screen_height, boolean fullscreen, boolean undecorated, int ticks_per_second) {
+		
+		
 		cont.add(scr);
 		frame.addKeyListener(keys);
 		scr.addMouseListener(mouse);
@@ -154,28 +157,38 @@ public class Engine {
 		
 		scrWidth = screen_width;
 		scrHeight = screen_height;
-		if (fullscreen) {
-			frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-			//frame.setPreferredSize(new Dimension((int)Toolkit.getDefaultToolkit().getScreenSize().getWidth(), (int)Toolkit.getDefaultToolkit().getScreenSize().getHeight()));
-			//frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
-			scrWidth = cont.getWidth();
-			scrHeight = cont.getHeight();
-		}
-		else {
-			frame.setSize(scrWidth, scrHeight);
-			
-		}
+		
 		
 		if (undecorated) {
 			frame.setUndecorated(true);
 		}
 		
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		running = true;
 		tps = ticks_per_second;
 		
-		frame.setVisible(true);
+		SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+            	if (fullscreen) {
+        			frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+        			//frame.setPreferredSize(new Dimension((int)Toolkit.getDefaultToolkit().getScreenSize().getWidth(), (int)Toolkit.getDefaultToolkit().getScreenSize().getHeight()));
+        			//frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
+        			scrWidth = cont.getWidth();
+        			scrHeight = cont.getHeight();
+        		}
+        		else {
+        			frame.setSize(scrWidth, scrHeight);
+        			
+        		}
+
+        		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        		
+            	frame.setVisible(true);
+            }
+        });
+		
+		
 		
 		//SetVisibleThread runit = new SetVisibleThread();
 		//runit.start();

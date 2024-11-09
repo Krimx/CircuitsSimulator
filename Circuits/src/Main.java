@@ -102,7 +102,7 @@ public class Main {
 	
 	public static void main(String[] args) {
 		try {
-			trashCan = ImageIO.read(new FileInputStream("recs/trashy.png"));
+			trashCan = ImageIO.read(Engine.class.getResourceAsStream("/trashy.png"));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
